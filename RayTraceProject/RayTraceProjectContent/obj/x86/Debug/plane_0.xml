@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics" xmlns:Framework="Microsoft.Xna.Framework">
+  <Asset Type="Graphics:NodeContent">
+    <Name>RootFrame</Name>
+    <Identity>
+      <SourceFilename>D:\Projects\RayTraceProject\RayTraceProject\RayTraceProjectContent\plane.x</SourceFilename>
+      <SourceTool>XImporter</SourceTool>
+    </Identity>
+    <Transform>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</Transform>
+    <Children>
+      <Child>
+        <Name>Plane</Name>
+        <Transform>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</Transform>
+        <Children>
+          <Child Type="Graphics:MeshContent">
+            <Name></Name>
+            <Transform>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</Transform>
+            <Positions>5000 0 -5000 -5000 0 -5000 -5000 0 5000 5000 0 5000</Positions>
+            <Geometry>
+              <Batch>
+                <Indices>0 1 2 0 2 3</Indices>
+                <Vertices>
+                  <PositionIndices>3 2 1 0</PositionIndices>
+                  <Channels>
+                    <VertexChannel Name="Normal0" ElementType="Framework:Vector3">0 0 -1 0 0 -1 0 0 -1 0 0 -1</VertexChannel>
+                    <VertexChannel Name="TextureCoordinate0" ElementType="Framework:Vector2">1000 -0 0 -0 0 -1000 1000 -1000</VertexChannel>
+                  </Channels>
+                </Vertices>
+              </Batch>
+            </Geometry>
+          </Child>
+        </Children>
+      </Child>
+    </Children>
+  </Asset>
+</XnaContent>
