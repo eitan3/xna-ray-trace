@@ -13,9 +13,9 @@ namespace RayTracerTypeLibrary
 {
     public struct Triangle
     {
-        public Vector3 v1;
-        public Vector3 v2;
-        public Vector3 v3;
-        public Vector3 normal;
+        public int id;
+        public Vector3 v1, v2, v3;
+        public Vector2 uv1, uv2, uv3;
+        public Vector3 n1, n2, n3;
     }
 }

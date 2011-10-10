@@ -73,7 +73,21 @@
       <Name>Crate_Fragile</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_Scale>0.1</ProcessorParameters_Scale>
+      <ProcessorParameters_RotationX>90</ProcessorParameters_RotationX>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="formica rufa.fbx">
+      <Name>Ant</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>ModelProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="coffeepot.FBX">
+      <Name>coffeepot</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />

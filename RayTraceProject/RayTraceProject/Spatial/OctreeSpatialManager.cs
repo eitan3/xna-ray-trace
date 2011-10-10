@@ -385,7 +385,7 @@ namespace RayTraceProject.Spatial
                 {
                     if (camera.BoundingFrustum.Intersects(node.containingObjects[i].BoundingBox))
                     {
-                        (node.containingObjects[i] as SceneObject).Draw(ref view, ref proj, gameTime);
+                        (node.containingObjects[i] as SceneObject).Draw(ref view, ref proj, device, gameTime);
                         //node.containingObjects[i].BoundingBox.Draw(device);
                     }
                 }
@@ -399,5 +399,152 @@ namespace RayTraceProject.Spatial
                 }
             }
         }
+
+        private class RayIntersectResult
+        {
+            public ISpatialBody body;
+            public float result;
+        }
+
+        public List<ISpatialBody> GetIntersectedBodies(ref Ray ray)
+        {
+            List<RayIntersectResult> bodies = new List<RayIntersectResult>();
+            
+            this.GetIntersectedBodies(ref ray, this.root, bodies);
+            if (bodies.Count == 0)
+                return null;
+
+            RayIntersectResult best = bodies.OrderBy(x => x.result).First();
+
+            return bodies.Where(x => x.body.BoundingBox.Intersects(best.body.BoundingBox)).OrderBy(x => x.result).Select(x => x.body).ToList();
+        }
+
+        private void GetIntersectedBodies(ref Ray ray, CubeNode currentNode, List<RayIntersectResult> bodies)
+        {
+            float? result;
+            currentNode.bounds.Intersects(ref ray, out result);
+            if(!result.HasValue)
+                return;
+            else
+            {
+                if (currentNode.children == null)
+                {
+                    for (int i = 0; i < currentNode.containingObjects.Count; i++)
+                    {
+                        Ray transformedRay;
+                        SceneObject obj = (SceneObject)currentNode.containingObjects[i];
+                        Matrix inverseWorld = obj.InverseWorld;
+
+                        Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
+                        Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
+                        ray.Direction.Normalize();
+
+                        float? objectResult;
+                        obj.BoundingBox.Intersects(ref ray, out objectResult);
+                        if (objectResult.HasValue)
+                            bodies.Add(new RayIntersectResult() { body = currentNode.containingObjects[i], result = objectResult.Value });
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        this.GetIntersectedBodies(ref ray, currentNode.children[i], bodies);
+                    }
+                }
+            }
+        }
+
+        private class RayIntersectResultCube
+        {
+            public CubeNode cubeoid;
+            public float result;
+        }
+
+
+        public bool GetRayIntersection(ref Ray ray, out Triangle? triangle, out float? u, out float? v)
+        {
+            triangle = null;
+            u = v = 0;
+
+            SortedDictionary<float, CubeNode> cubeoids = new SortedDictionary<float, CubeNode>();
+            this.GetRayCubeNodeIntersections(ref ray, this.root, cubeoids);
+            if (cubeoids.Count == 0)
+                return false;
+
+            List<CubeNode> intersectedCubeoids = cubeoids.Values.ToList();
+
+            int cubeoidIndex = 0;
+
+            float minDistance = float.MaxValue;
+            float intersectionU = 0;
+            float intersectionV = 0;
+            Triangle? intersectedTriangle = null;
+            bool intersectionFound = false;
+            while (!intersectionFound && cubeoidIndex < intersectedCubeoids.Count)
+            {
+                List<ISpatialBody> objects = intersectedCubeoids[cubeoidIndex++].containingObjects;
+                for (int i = 0; i < objects.Count; i++)
+                {
+                    SceneObject sceneObject = (SceneObject)objects[i];
+                    Matrix inverseWorld = sceneObject.InverseWorld;
+                    Ray transformedRay;
+                    Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
+                    Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
+                    transformedRay.Direction.Normalize();
+
+                    if (sceneObject.RayIntersects(ray))
+                    {
+                        List<Triangle> triangles = sceneObject.GetTriangles();
+                        for (int j = 0; j < triangles.Count; j++)
+                        {
+                            float currentU, currentV, distance;
+                            if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) && 
+                                distance < minDistance)
+                            {
+                                minDistance = distance;
+                                intersectionU = currentU;
+                                intersectionV = currentV;
+                                intersectedTriangle = triangles[j];
+
+                                // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
+                                intersectionFound = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (intersectionFound)
+            {
+                triangle = intersectedTriangle;
+                u = intersectionU;
+                v = intersectionV;
+            }
+
+            return intersectionFound;
+        }
+
+        private void GetRayCubeNodeIntersections(ref Ray ray, CubeNode current, SortedDictionary<float, CubeNode> cubeoids)
+        {
+            float? result;
+            current.bounds.Intersects(ref ray, out result);
+            if (result.HasValue)
+            {
+                if (current.children != null)
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        GetRayCubeNodeIntersections(ref ray, current.children[i], cubeoids);
+                    }
+                }
+                else
+                {
+                    cubeoids.Add(result.Value, current);
+                }
+            }
+        }
+
+        
     }
 }

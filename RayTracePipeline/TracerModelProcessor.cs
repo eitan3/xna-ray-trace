@@ -28,10 +28,15 @@ namespace RayTracePipeline
     [ContentProcessor(DisplayName = "TracerModelProcessor")]
     public class TracerModelProcessor : ModelProcessor
     {
+        static int counter = 0;
+        Color c;
         public override ModelContent Process(NodeContent input, ContentProcessorContext context)
         {
+            Random rand = new Random();
+            c = new Color(0, rand.Next(0, 256), 0);
             //System.Diagnostics.Debugger.Launch();
             ModelContent content = base.Process(input, context);
+            
 
             List<Triangle> triangles = new List<Triangle>();
             this.FindVertices(input, triangles);
@@ -44,7 +49,7 @@ namespace RayTracePipeline
             contentData.Add("box", boundingBox);
 
             content.Tag = contentData;
-
+            counter++;
             return content;
         }
 
@@ -58,26 +63,72 @@ namespace RayTracePipeline
                 Matrix absoluteTransform = mesh.AbsoluteTransform;
                 foreach (GeometryContent geometry in mesh.Geometry)
                 {
+                    List<Vector2> texCoords = new List<Vector2>();
+                    if (geometry.Vertices.Channels.Contains(VertexChannelNames.TextureCoordinate(0)))
+                    {
+                        VertexChannel channel = geometry.Vertices.Channels[VertexChannelNames.TextureCoordinate(0)];
+                        foreach (Vector2 v in channel)
+                        {
+                            texCoords.Add(new Vector2(v.X, v.Y));
+                        }
+                    }
+
+                    List<Vector3> colors = new List<Vector3>();
+                    if (geometry.Vertices.Channels.Contains(VertexChannelNames.Color(0)))
+                    {
+                        VertexChannel channel = geometry.Vertices.Channels[VertexChannelNames.Color(0)];
+                        foreach(Vector3 color in channel)
+                        {
+                            colors.Add(color);
+                        }
+                    }
+
+                    List<Vector3> normals = new List<Vector3>();
+                    if(geometry.Vertices.Channels.Contains(VertexChannelNames.Normal(0)))
+                    {
+                        VertexChannel channel = geometry.Vertices.Channels[VertexChannelNames.Normal(0)];
+                        foreach(Vector3 normal in channel)
+                        {
+                            normals.Add(normal);
+                        }
+                    }
+
+                    BasicMaterialContent basicMaterial = geometry.Material as BasicMaterialContent;
+                    Matrix normalTransform = Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateRotationZ(MathHelper.Pi);
                     for (int i = 0; i < geometry.Indices.Count; i += 3)
                     {
                         Vector3 v1 = geometry.Vertices.Positions[geometry.Indices[i]];
                         Vector3 v2 = geometry.Vertices.Positions[geometry.Indices[i + 1]];
                         Vector3 v3 = geometry.Vertices.Positions[geometry.Indices[i + 2]];
 
-                        VertexChannel channel = geometry.Vertices.Channels[VertexChannelNames.TextureCoordinate(0)];
+                        Vector3 n1 = normals[geometry.Indices[i]];
+                        Vector3 n2 = normals[geometry.Indices[i + 1]];
+                        Vector3 n3 = normals[geometry.Indices[i + 2]];
 
                         Vector3.Transform(ref v1, ref absoluteTransform, out v1);
                         Vector3.Transform(ref v2, ref absoluteTransform, out v2);
                         Vector3.Transform(ref v3, ref absoluteTransform, out v3);
-                        Vector3 normal = Vector3.Cross(v3 - v1, v2 - v1);
-                        normal.Normalize();
+
+                        // I have no idea why I have to do this. If I do not, the Z and Y components of all normals are "switched" around.
+                        Vector3.Transform(ref n1, ref normalTransform, out n1);
+                        Vector3.Transform(ref n2, ref normalTransform, out n2);
+                        Vector3.Transform(ref n3, ref normalTransform, out n3);
+
+                        n1.Normalize();
+                        n2.Normalize();
+                        n3.Normalize();
 
                         Triangle triangle = new Triangle();
                         triangle.v1 = v1;
                         triangle.v2 = v2;
                         triangle.v3 = v3;
-                        triangle.normal = normal;
-
+                        triangle.uv1 = texCoords[geometry.Indices[i]];
+                        triangle.uv2 = texCoords[geometry.Indices[i + 1]];
+                        triangle.uv2 = texCoords[geometry.Indices[i + 2]];
+                        triangle.n1 = n1;
+                        triangle.n2 = n2;
+                        triangle.n3 = n3;
+                        triangle.id = counter;
                         triangles.Add(triangle);
                     }
                     

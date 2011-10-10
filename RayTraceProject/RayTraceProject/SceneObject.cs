@@ -83,6 +83,7 @@ namespace RayTraceProject
             Dictionary<string, object> modelData = (Dictionary<string, object>)model.Tag;
             this.vertices = (List<Triangle>)modelData["vertices"];
             this.boundingBox = (BoundingBox)modelData["box"];
+
         }
 
         private void BuildWorld()
@@ -98,10 +99,11 @@ namespace RayTraceProject
             this.world = scaleMatrix * rotationMatrix * translationMatrix;
             //Vector3.Transform(ref this.boundingBox.Max, ref this.world, out this.boundingBox.Max);
             //Vector3.Transform(ref this.boundingBox.Min, ref this.world, out this.boundingBox.Min);
+
             Matrix.Invert(ref this.world, out this.inverseWorld);
         }
 
-        public void Draw(ref Matrix view, ref Matrix proj, GameTime gameTime)
+        public void Draw(ref Matrix view, ref Matrix proj, GraphicsDevice device, GameTime gameTime)
         {
             Matrix[] boneTransforms = new Matrix[this.model.Bones.Count];
             this.model.CopyAbsoluteBoneTransformsTo(boneTransforms);
@@ -118,7 +120,24 @@ namespace RayTraceProject
                 }
                 this.model.Meshes[i].Draw();
             }
+
+            VertexPositionNormalTexture[] verts = new VertexPositionNormalTexture[this.vertices.Count * 3];
+            for (int i = 0; i < this.vertices.Count; i++)
+            {
+                verts[i * 3] = new VertexPositionNormalTexture(this.vertices[i].v1, Vector3.Up, Vector2.Zero);
+                verts[(i * 3) + 1] = new VertexPositionNormalTexture(this.vertices[i].v2, Vector3.Up, Vector2.UnitX);
+                verts[(i * 3) + 2] = new VertexPositionNormalTexture(this.vertices[i].v3, Vector3.Up, Vector2.One);
+            }
+
+            if(eff == null)
+                eff = new BasicEffect(device);
+            eff.World = this.world;
+            eff.Projection = proj;
+            eff.View = view;
+            eff.CurrentTechnique.Passes[0].Apply();
+            //device.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, verts, 0, vertices.Count, VertexPositionNormalTexture.VertexDeclaration);
         }
+        BasicEffect eff = null;
 
         public List<Triangle> GetTriangles()
         {
@@ -127,10 +146,6 @@ namespace RayTraceProject
 
         public bool RayIntersects(Ray ray)
         {
-            //Matrix inv = this.InverseWorld;
-            //Vector3.Transform(ref ray.Position, ref inv, out ray.Position);
-            //Vector3.Transform(ref ray.Direction, ref inv, out ray.Direction);
-
             return this.BoundingBox.Intersects(ray).HasValue;
         }
 
