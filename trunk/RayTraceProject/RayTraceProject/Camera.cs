@@ -154,7 +154,7 @@ namespace RayTraceProject
         {
             get
             {
-                if (this.viewIsDirty)
+                //if (this.viewIsDirty)
                     this.CreateView();
                 return this.view;
             }
@@ -164,7 +164,7 @@ namespace RayTraceProject
         {
             get
             {
-                if (this.projectionIsDirty)
+                //if (this.projectionIsDirty)
                     this.CreateProjection();
 
                 return this.projection;

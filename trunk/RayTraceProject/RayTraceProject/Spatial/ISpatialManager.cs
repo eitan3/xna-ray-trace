@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
+using RayTracerTypeLibrary;
 
 namespace RayTraceProject.Spatial
 {
@@ -16,5 +17,8 @@ namespace RayTraceProject.Spatial
         uint GetCubeoidId(Vector3 point);
         List<ISpatialBody> GetContainedBodies(uint cubeoidId);
         bool TranslateRayToScene(ref Ray ray);
+
+        List<ISpatialBody> GetIntersectedBodies(ref Ray ray);
+        bool GetRayIntersection(ref Ray ray, out Triangle? triangle, out float? u, out float? v);
     }
 }
