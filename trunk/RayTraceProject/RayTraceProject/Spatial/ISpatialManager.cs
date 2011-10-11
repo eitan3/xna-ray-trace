@@ -19,6 +19,6 @@ namespace RayTraceProject.Spatial
         bool TranslateRayToScene(ref Ray ray);
 
         List<ISpatialBody> GetIntersectedBodies(ref Ray ray);
-        bool GetRayIntersection(ref Ray ray, out Triangle? triangle, out float? u, out float? v);
+        bool GetRayIntersection(ref Ray ray, out Triangle triangle, out float? u, out float? v, Triangle origin);
     }
 }

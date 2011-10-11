@@ -74,6 +74,7 @@ namespace RayTraceProject
                     this.contexts[threadIndex] = new RenderThreadContext(threadIndex, new Rectangle(x * rectWidth, y * rectHeight, rectWidth, rectHeight));
                     renderThreads[threadIndex] = new System.Threading.Thread(this.RenderRectangle);
                     renderThreads[threadIndex].IsBackground = true;
+                    renderThreads[threadIndex].Name = string.Format("RenderThread ({0})", threadIndex);
                     renderThreads[threadIndex].Start(this.contexts[threadIndex]);
                 }
             }
@@ -131,7 +132,7 @@ namespace RayTraceProject
                     Vector3.Normalize(ref ray.Direction, out ray.Direction);
                     
                     Color color;
-                    this.CastRay(ref ray, out color);
+                    this.CastRay(ref ray, out color, 1, null);
                     textureData[((y - rect.Y) * rect.Width) + (x - rect.X)] = color;  
                 }
 
@@ -144,23 +145,102 @@ namespace RayTraceProject
             CurrentTarget.SetData<Color>(0, rect, textureData, 0, dataSize);
         }
 
-        public void CastRay(ref Ray ray, out Color result)
+        public void CastRay(ref Ray ray, out Color result, int iteration, Triangle origin)
         {
             result = Color.White;
 
-            Triangle? triangle;
+            Triangle triangle;
             float? u, v;
-            if (CurrentScene.GetRayIntersection(ref ray, out triangle, out u, out v))
+            if (CurrentScene.GetRayIntersection(ref ray, out triangle, out u, out v, origin))
             {
-                Vector3 n1 = triangle.Value.n2 - triangle.Value.n1;
-                Vector3 n2 = triangle.Value.n3 - triangle.Value.n1;
-                Vector3 intersection = triangle.Value.n1 + (n1 * u.Value) + (n2 * v.Value);
-                intersection.Normalize();
-                result = new Color(intersection);
+                if (iteration < 2)
+                {
+                    Vector3 n1 = triangle.n2 - triangle.n1;
+                    Vector3 n2 = triangle.n3 - triangle.n1;
+                    Vector3 interpolatedNormal = triangle.n1 + (n1 * u.Value) + (n2 * v.Value);
+                    interpolatedNormal.Normalize();
+
+                    Vector3 p1 = triangle.v2 - triangle.v1;
+                    Vector3 p2 = triangle.v3 - triangle.v1;
+                    Vector3 interpolatedPosition = triangle.v1 + (p1 * u.Value) + (p2 * v.Value);
+
+
+
+                    Vector3.Reflect(ref ray.Direction, ref interpolatedNormal, out ray.Direction);
+                    ray.Direction.Normalize();
+                    ray.Position = interpolatedPosition;
+
+                    Color reflectionColor;
+                    this.CastRay(ref ray, out reflectionColor, iteration + 1, triangle);
+
+                    Vector3 lightDir = new Vector3(1, 1, 0);
+                    lightDir.Normalize();
+
+                    float lightIntensity = Vector3.Dot(lightDir, interpolatedNormal);
+                    if (lightIntensity < 0.1f)
+                        lightIntensity = 0.1f;
+
+                    Material material = triangle.material;
+                    Vector3 surfaceColor;
+                    if (material.UseTexture)
+                    {
+                        Vector2 uv1 = triangle.uv2 - triangle.uv1;
+                        Vector2 uv2 = triangle.uv3 - triangle.uv1;
+                        Vector2 interpolatedUV = triangle.uv1 + (uv1 * u.Value) + (uv2 * v.Value);
+
+                        material.LookupUV(ref interpolatedUV, out surfaceColor);
+                    }
+                    else
+                    {
+                        surfaceColor = triangle.color;
+                    }
+
+                    result = new Color(Vector3.Lerp(reflectionColor.ToVector3(), (surfaceColor * lightIntensity), 1.0f - material.Reflectiveness));
+                }
+                else
+                {
+                    Vector3 n1 = triangle.n2 - triangle.n1;
+                    Vector3 n2 = triangle.n3 - triangle.n1;
+                    Vector3 interpolatedNormal = triangle.n1 + (n1 * u.Value) + (n2 * v.Value);
+                    interpolatedNormal.Normalize();
+
+                    Vector3 lightDir = new Vector3(1, 1, 0);
+                    lightDir.Normalize();
+
+                    float lightIntensity = Vector3.Dot(lightDir, interpolatedNormal);
+                    if (lightIntensity < 0f)
+                        lightIntensity = 0f;
+
+                    Material material = triangle.material;
+                    Vector3 surfaceColor;
+                    if (material.UseTexture)
+                    {
+                        Vector2 uv1 = triangle.uv2 - triangle.uv1;
+                        Vector2 uv2 = triangle.uv3 - triangle.uv1;
+                        Vector2 interpolatedUV = triangle.uv1 + (uv1 * u.Value) + (uv2 * v.Value);
+
+                        material.LookupUV(ref interpolatedUV, out surfaceColor);
+                    }
+                    else
+                    {
+                        surfaceColor = triangle.color;
+                    }
+
+                    result = new Color(lightIntensity * surfaceColor);
+                }
+
+
+                
             }
             else
             {
-                result = Color.IndianRed;
+                Vector3 lightDir = new Vector3(1, 1, 0);
+                lightDir.Normalize();
+                float lightIntensity = Vector3.Dot(ray.Direction, lightDir);
+                if (lightIntensity < 0f)
+                    lightIntensity = 0f;
+
+                result = new Color(Vector3.One * lightIntensity);
             }
             
         }

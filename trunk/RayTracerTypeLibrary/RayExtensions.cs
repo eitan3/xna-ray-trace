@@ -15,6 +15,11 @@ namespace RayTracerTypeLibrary
             Vector3 D = ray.Direction;
             Vector3 T = ray.Position - triangle.v1;
 
+            //float dot;
+            //Vector3.Dot(ref triangle.surfaceNormal, ref D, out dot);
+            //if (dot > 0)
+            //    return false;
+
             Vector3 Edge1 = triangle.v2 - triangle.v1;
             Vector3 Edge2 = triangle.v3 - triangle.v1;
 

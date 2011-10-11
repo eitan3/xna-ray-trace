@@ -20,7 +20,7 @@ namespace RayTraceProject.Spatial
             public List<ISpatialBody> containingObjects;
         }
         private CubeNode root;
-        private int itemTreshold = 2;
+        private int itemTreshold = 3;
         private List<ISpatialBody> objects;
         private uint depth;
 
@@ -48,6 +48,9 @@ namespace RayTraceProject.Spatial
             for (int i = 0; i < this.objects.Count; i++)
             {
                 objectBox = this.objects[i].BoundingBox;
+                Matrix world = (this.objects[i] as SceneObject).World;
+                Vector3.Transform(ref objectBox.Min, ref world, out objectBox.Min);
+                Vector3.Transform(ref objectBox.Max, ref world, out objectBox.Max);
 
                 BoundingBox.CreateMerged(ref box, ref objectBox, out box);
             }
@@ -462,7 +465,7 @@ namespace RayTraceProject.Spatial
         }
 
 
-        public bool GetRayIntersection(ref Ray ray, out Triangle? triangle, out float? u, out float? v)
+        public bool GetRayIntersection(ref Ray ray, out Triangle triangle, out float? u, out float? v, Triangle origin)
         {
             triangle = null;
             u = v = 0;
@@ -479,7 +482,7 @@ namespace RayTraceProject.Spatial
             float minDistance = float.MaxValue;
             float intersectionU = 0;
             float intersectionV = 0;
-            Triangle? intersectedTriangle = null;
+            Triangle intersectedTriangle = null;
             bool intersectionFound = false;
             while (!intersectionFound && cubeoidIndex < intersectedCubeoids.Count)
             {
@@ -488,27 +491,40 @@ namespace RayTraceProject.Spatial
                 {
                     SceneObject sceneObject = (SceneObject)objects[i];
                     Matrix inverseWorld = sceneObject.InverseWorld;
-                    Ray transformedRay;
-                    Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
-                    Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
+                    // -- While the below LOOKS like it should work, it does not. Correct solution below!
+                    //Ray transformedRay;
+                    //Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
+                    //Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
+                    //transformedRay.Direction.Normalize();
+
+                    Vector3 v1 = Vector3.Transform(ray.Position, inverseWorld);
+                    Vector3 v2 = Vector3.Transform(ray.Position + ray.Direction, inverseWorld);
+                    Ray transformedRay = new Ray(v1, v2 - v1);
                     transformedRay.Direction.Normalize();
 
-                    if (sceneObject.RayIntersects(ray))
+                    if (sceneObject.RayIntersects(transformedRay))
                     {
                         List<Triangle> triangles = sceneObject.GetTriangles();
                         for (int j = 0; j < triangles.Count; j++)
                         {
-                            float currentU, currentV, distance;
-                            if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) && 
-                                distance < minDistance)
+                            if (origin != null && origin.id == triangles[j].id)
                             {
-                                minDistance = distance;
-                                intersectionU = currentU;
-                                intersectionV = currentV;
-                                intersectedTriangle = triangles[j];
+                                int igf = 5;
+                            }
+                            else
+                            {
+                                float currentU, currentV, distance;
+                                if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) &&
+                                    distance < minDistance)
+                                {
+                                    minDistance = distance;
+                                    intersectionU = currentU;
+                                    intersectionV = currentV;
+                                    intersectedTriangle = triangles[j];
 
-                                // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
-                                intersectionFound = true;
+                                    // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
+                                    intersectionFound = true;
+                                }
                             }
                         }
                     }
