@@ -84,6 +84,13 @@ namespace RayTraceProject
             this.vertices = (List<Triangle>)modelData["vertices"];
             this.boundingBox = (BoundingBox)modelData["box"];
 
+            Material material = (Material)modelData["material"];
+            material.Init();
+            for (int i = 0; i < this.vertices.Count; i++)
+            {
+                this.vertices[i].SetMaterial(material);
+            }
+
         }
 
         private void BuildWorld()

@@ -59,6 +59,9 @@
       <Name>Plane</Name>
       <Importer>XImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
+      <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\checkers.bmp</ProcessorParameters_TextureFilePath>
+      <ProcessorParameters_Reflectiveness>0.6</ProcessorParameters_Reflectiveness>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -72,8 +75,7 @@
     <Compile Include="Crate_Fragile.FBX">
       <Name>Crate_Fragile</Name>
       <Importer>FbxImporter</Importer>
-      <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_RotationX>90</ProcessorParameters_RotationX>
+      <Processor>ModelProcessor</Processor>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +90,8 @@
       <Name>coffeepot</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_Reflectiveness>0.4</ProcessorParameters_Reflectiveness>
+      <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />

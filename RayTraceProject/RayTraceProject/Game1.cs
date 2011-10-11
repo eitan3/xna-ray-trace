@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using RayTracerTypeLibrary;
+using System.Diagnostics;
 
 namespace RayTraceProject
 {
@@ -41,13 +42,13 @@ namespace RayTraceProject
             // TODO: Add your initialization logic here
             this.rasterState = new RasterizerState();
             this.rasterState.CullMode = CullMode.CullCounterClockwiseFace;
-            this.rasterState.FillMode = FillMode.WireFrame;
+            this.rasterState.FillMode = FillMode.Solid; // FillMode.WireFrame;
 
             base.Initialize();
         }
         Spatial.OctreeSpatialManager scene;
         Camera camera;
-        SceneObject android, crate, sony;
+        SceneObject android, crate, sony, crate2;
         RenderTarget2D rayTraceTarget;
         RayTracer tracer;
         SceneObject plane;
@@ -67,16 +68,19 @@ namespace RayTraceProject
             //Model androidModel = Content.Load<Model>("Android");
             //android = new SceneObject(androidModel, new Vector3(0, 0, 0), Vector3.Zero);
 
-            Model crateModel = Content.Load<Model>("coffeepot");
-            crate = new SceneObject(crateModel, new Vector3(0, 0, 0), Vector3.Zero);
+            Model coffeeModel = Content.Load<Model>("coffeepot");
+            crate = new SceneObject(coffeeModel, new Vector3(0, 9, 0), Vector3.Zero);
+
+            //crate2 = new SceneObject(coffeeModel, new Vector3(50, 9, 0), Vector3.Zero);
 
             //Model sonyModel = Content.Load<Model>("Ant");
             //sony = new SceneObject(sonyModel, new Vector3(0, 0, 0), Vector3.Zero);
 
             this.scene = new Spatial.OctreeSpatialManager();
 
-            //scene.Bodies.Add(plane);
+            scene.Bodies.Add(plane);
             scene.Bodies.Add(crate);
+            //scene.Bodies.Add(crate2);
             //scene.Bodies.Add(sony);
             //scene.Bodies.Add(android); // Avoid using android model until it works. It has far too many triangles to use for testing.
 
@@ -84,7 +88,7 @@ namespace RayTraceProject
 
             //this.camera = new Camera(new Vector3(0, 17, 70), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             //this.camera = new Camera(new Vector3(0, 3, 17), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            this.camera = new Camera(new Vector3(0, 10, 10), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            this.camera = new Camera(new Vector3(-58, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
 
             tracer = new RayTracer();
@@ -101,6 +105,7 @@ namespace RayTraceProject
 
         int progress;
         bool running = false;
+        Stopwatch rayTraceWatch;
         void tracer_RenderProgressChanged(object sender, System.ComponentModel.ProgressChangedEventArgs e)
         {
             progress = e.ProgressPercentage;
@@ -108,6 +113,8 @@ namespace RayTraceProject
 
         void tracer_RenderCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
+            rayTraceWatch.Stop();
+            Debug.WriteLine(rayTraceWatch.Elapsed.ToString());
             running = false;
         }
 
@@ -125,6 +132,8 @@ namespace RayTraceProject
         Ray ray;
         Ray crateRay;
         float distance;
+        Vector2 lastMouseCoord;
+        List<Triangle> tris;
         /// <summary>
         /// Allows the game to run logic such as updating the world,
         /// checking for collisions, gathering input, and playing audio.
@@ -132,6 +141,7 @@ namespace RayTraceProject
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
@@ -163,6 +173,7 @@ namespace RayTraceProject
                 tracer.CurrentScene = this.scene;
 
                 this.running = true;
+                rayTraceWatch = Stopwatch.StartNew();
                 tracer.RenderAsync();
             }
 
@@ -171,70 +182,100 @@ namespace RayTraceProject
 
             
             MouseState mouseState = Mouse.GetState();
+            Vector2 mouseCoord = new Vector2(mouseState.X, mouseState.Y);
             if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
             {
 
-                Vector3 v1 = new Vector3(mouseState.X, mouseState.Y, 0f);
-                Vector3 v2 = new Vector3(mouseState.X, mouseState.Y, 1f);
+               // Vector3 v1 = new Vector3(mouseState.X, mouseState.Y, 0f);
+               // Vector3 v2 = new Vector3(mouseState.X, mouseState.Y, 1f);
 
-                Vector3 unv1 = GraphicsDevice.Viewport.Unproject(v1, camera.Projection, camera.View, Matrix.Identity);
-                Vector3 unv2 = GraphicsDevice.Viewport.Unproject(v2, camera.Projection, camera.View, Matrix.Identity);
+               // Vector3 unv1 = GraphicsDevice.Viewport.Unproject(v1, camera.Projection, camera.View, Matrix.Identity);
+               // Vector3 unv2 = GraphicsDevice.Viewport.Unproject(v2, camera.Projection, camera.View, Matrix.Identity);
 
-                ray = new Ray(unv1, unv2 - unv1);
-                ray.Direction.Normalize();
+               // ray = new Ray(unv1, unv2 - unv1);
+               // ray.Direction.Normalize();
 
-                Ray planeRay;
-                Matrix invPlane = plane.InverseWorld;
-                Matrix invCrate = crate.InverseWorld;
-                Vector3.Transform(ref ray.Position, ref invPlane, out planeRay.Position);
-                Vector3.Transform(ref ray.Position, ref invCrate, out crateRay.Position);
+               // crateRay = ray;
+               // Matrix invCrate = Matrix.Invert(crate2.World);
 
-                Vector3.Transform(ref ray.Direction, ref invPlane, out planeRay.Direction);
-                Vector3.Transform(ref ray.Direction, ref invCrate, out crateRay.Direction);
+               // Vector3 t1 = Vector3.Transform(ray.Position, invCrate);
+               // Vector3 t2 = Vector3.Transform(ray.Position + ray.Direction, invCrate);
+               // crateRay = new Ray(t1, t2 - t1);
 
-                planeRay.Direction.Normalize();
-                crateRay.Direction.Normalize();
 
-                List<Triangle> tris;
-                float minT = float.MaxValue;
-                bool hit = false;
-                float u, v, t;
-                float hitU, hitV;
-                hitU = hitV = 0;
-                Triangle? triangle = null;
+               // //Vector3.Transform(ref ray.Position, ref invCrate, out crateRay.Position);
+               // //crateRay.Direction = Vector3.Transform(ray.Position + ray.Direction, invCrate);
 
-                tris = crate.GetTriangles();
-                for (int i = 0; i < tris.Count; i++)
-                {
-                    
-                    if (ray.IntersectsTriangle(tris[i], out u, out v, out t))
-                    {
-                        if (t < minT)
-                        {
-                            minT = t;
-                            hit = true;
-                            triangle = tris[i];
-                            hitU = u;
-                            hitV = v;
-                        }
-                    }
-                }
+               //// Vector3.Transform(ref ray.Direction, ref invCrate, out crateRay.Direction);
 
-                if (hit)
-                {
-                    distance = minT;
-                    Vector3 n1 = triangle.Value.n2 - triangle.Value.n1;
-                    Vector3 n2 = triangle.Value.n3 - triangle.Value.n1;
-                    Vector3 intersection = triangle.Value.n1 + (n1 * hitV) + (n2 * hitU);
-                    intersection.Normalize();
-                    Window.Title = string.Format("Distance: {0} - UV: [{1},{2}] - Normal: {3}", minT, hitU, hitV, intersection);
-                    System.Diagnostics.Debug.WriteLine(Window.Title);
-                }
-                else
-                {
-                    Window.Title = "No hit!";
-                }
+               // crateRay.Direction.Normalize();
+
+               // float minT = float.MaxValue;
+               // bool hit = false;
+               // float u, v, t;
+               // float hitU, hitV;
+               // hitU = hitV = 0;
+               // Triangle? triangle = null;
+
+               // List<Triangle> tris2 = crate2.GetTriangles();
+
+               // for (int i = 0; i < tris2.Count; i++)
+               // {
+
+               //     if (crateRay.IntersectsTriangle(tris2[i], out u, out v, out t))
+               //     {
+               //         if (t < minT)
+               //         {
+               //             minT = t;
+               //             hit = true;
+               //             triangle = tris2[i];
+               //             hitU = u;
+               //             hitV = v;
+               //         }
+               //     }
+               // }
+
+                
+               // //for (int i = 0; i < tris.Count; i++)
+               // //{
+                   
+               // //    if (ray.IntersectsTriangle(tris[i], out u, out v, out t))
+               // //    {
+               // //        if (t < minT)
+               // //        {
+               // //            minT = t;
+               // //            hit = true;
+               // //            triangle = tris[i];
+               // //            hitU = u;
+               // //            hitV = v;
+               // //        }
+               // //    }
+               // //}
+
+               // if (hit)
+               // {
+               //     distance = minT;
+               //     Vector3 n1 = triangle.Value.n2 - triangle.Value.n1;
+               //     Vector3 n2 = triangle.Value.n3 - triangle.Value.n1;
+               //     Vector3 intersection = triangle.Value.n1 + (n1 * hitV) + (n2 * hitU);
+               //     intersection.Normalize();
+               //     Window.Title = string.Format("Distance: {0} - UV: [{1},{2}] - Normal: {3}", minT, hitU, hitV, intersection);
+               //     System.Diagnostics.Debug.WriteLine(Window.Title);
+               // }
+               // else
+               // {
+               //     Window.Title = "No hit!";
+               // }
             }
+            if (mouseState.RightButton == ButtonState.Pressed)
+            {
+                Vector3 delta = new Vector3(lastMouseCoord - mouseCoord, 0);
+                delta.X *= -1;
+                camera.Position += delta;
+                camera.Target += delta;
+            }
+            lastMouseCoord = mouseCoord;
+
             if (running)
                 Window.Title = string.Format("Progress: {0}%", progress);
             //Window.Title = string.Format("{0} : {1}", mouseState.X, mouseState.Y);

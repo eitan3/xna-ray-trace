@@ -11,6 +11,7 @@ using Microsoft.Xna.Framework.Content.Pipeline.Processors;
 using TInput = System.String;
 using TOutput = System.String;
 using RayTracerTypeLibrary;
+using System.ComponentModel;
 
 namespace RayTracePipeline
 {
@@ -28,16 +29,57 @@ namespace RayTracePipeline
     [ContentProcessor(DisplayName = "TracerModelProcessor")]
     public class TracerModelProcessor : ModelProcessor
     {
-        static int counter = 0;
         Color c;
+        static int fleh = 0;
+
+        [DisplayName("Texture Filepath")]
+        [Description("Filepath to the texture to be used as a diffuse map")]
+        public string TextureFilePath
+        {
+            get;
+            set;
+        }
+
+        [DisplayName("Use Texture")]
+        [Description("Determines if a texture should be used when rendering this model")]
+        [DefaultValue(false)]
+        public bool UseTexture
+        {
+            get;
+            set;
+        }
+
+        [DisplayName("Reflectiveness")]
+        [Description("A value between 0 to 1 denoting how reflective the material is")]
+        [DefaultValue(0.5f)]
+        public float Reflectiveness
+        {
+            get;
+            set;
+        }
+
+        private Material material;
+
         public override ModelContent Process(NodeContent input, ContentProcessorContext context)
         {
-            Random rand = new Random();
-            c = new Color(0, rand.Next(0, 256), 0);
-            //System.Diagnostics.Debugger.Launch();
-            ModelContent content = base.Process(input, context);
+            switch (fleh)
+            {
+                case 0:
+                    c = Color.Red;
+                    break;
+                case 1:
+                    c = Color.SkyBlue;
+                    break;
+                case 3:
+                    c = Color.White;
+                    break;
+            }
+            fleh++;
             
-
+            ModelContent content = base.Process(input, context);
+            //System.Diagnostics.Debugger.Launch();
+            this.CreateMaterial();
+            
             List<Triangle> triangles = new List<Triangle>();
             this.FindVertices(input, triangles);
 
@@ -47,10 +89,16 @@ namespace RayTracePipeline
 
             contentData.Add("vertices", triangles);
             contentData.Add("box", boundingBox);
+            contentData.Add("material", this.material);
 
             content.Tag = contentData;
-            counter++;
             return content;
+        }
+
+        private void CreateMaterial()
+        {
+            
+            this.material = new Material(this.Reflectiveness, this.TextureFilePath);
         }
 
         private void FindVertices(NodeContent node, List<Triangle> triangles)
@@ -63,47 +111,36 @@ namespace RayTracePipeline
                 Matrix absoluteTransform = mesh.AbsoluteTransform;
                 foreach (GeometryContent geometry in mesh.Geometry)
                 {
-                    List<Vector2> texCoords = new List<Vector2>();
+                    VertexChannel texCoords = null;
                     if (geometry.Vertices.Channels.Contains(VertexChannelNames.TextureCoordinate(0)))
                     {
-                        VertexChannel channel = geometry.Vertices.Channels[VertexChannelNames.TextureCoordinate(0)];
-                        foreach (Vector2 v in channel)
-                        {
-                            texCoords.Add(new Vector2(v.X, v.Y));
-                        }
+                        texCoords = geometry.Vertices.Channels[VertexChannelNames.TextureCoordinate(0)];
                     }
 
-                    List<Vector3> colors = new List<Vector3>();
+                    VertexChannel colors = null;
                     if (geometry.Vertices.Channels.Contains(VertexChannelNames.Color(0)))
                     {
-                        VertexChannel channel = geometry.Vertices.Channels[VertexChannelNames.Color(0)];
-                        foreach(Vector3 color in channel)
-                        {
-                            colors.Add(color);
-                        }
+                        colors = geometry.Vertices.Channels[VertexChannelNames.Color(0)];
                     }
 
-                    List<Vector3> normals = new List<Vector3>();
+                    VertexChannel normals = null;
                     if(geometry.Vertices.Channels.Contains(VertexChannelNames.Normal(0)))
                     {
-                        VertexChannel channel = geometry.Vertices.Channels[VertexChannelNames.Normal(0)];
-                        foreach(Vector3 normal in channel)
-                        {
-                            normals.Add(normal);
-                        }
+                        normals = geometry.Vertices.Channels[VertexChannelNames.Normal(0)];
                     }
 
                     BasicMaterialContent basicMaterial = geometry.Material as BasicMaterialContent;
                     Matrix normalTransform = Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateRotationZ(MathHelper.Pi);
+                    int triangleIndex = 0;
                     for (int i = 0; i < geometry.Indices.Count; i += 3)
                     {
                         Vector3 v1 = geometry.Vertices.Positions[geometry.Indices[i]];
                         Vector3 v2 = geometry.Vertices.Positions[geometry.Indices[i + 1]];
                         Vector3 v3 = geometry.Vertices.Positions[geometry.Indices[i + 2]];
 
-                        Vector3 n1 = normals[geometry.Indices[i]];
-                        Vector3 n2 = normals[geometry.Indices[i + 1]];
-                        Vector3 n3 = normals[geometry.Indices[i + 2]];
+                        Vector3 n1 = (Vector3)normals[geometry.Indices[i]];
+                        Vector3 n2 = (Vector3)normals[geometry.Indices[i + 1]];
+                        Vector3 n3 = (Vector3)normals[geometry.Indices[i + 2]];
 
                         Vector3.Transform(ref v1, ref absoluteTransform, out v1);
                         Vector3.Transform(ref v2, ref absoluteTransform, out v2);
@@ -118,17 +155,26 @@ namespace RayTracePipeline
                         n2.Normalize();
                         n3.Normalize();
 
+                        Vector3 edge1, edge2, surfaceNormal;
+                        Vector3.Subtract(ref v2, ref v1, out edge1);
+                        Vector3.Subtract(ref v3, ref v1, out edge2);
+                        Vector3.Cross(ref edge2, ref edge1, out surfaceNormal);
+                        surfaceNormal.Normalize();
+
                         Triangle triangle = new Triangle();
                         triangle.v1 = v1;
                         triangle.v2 = v2;
                         triangle.v3 = v3;
-                        triangle.uv1 = texCoords[geometry.Indices[i]];
-                        triangle.uv2 = texCoords[geometry.Indices[i + 1]];
-                        triangle.uv2 = texCoords[geometry.Indices[i + 2]];
+                        triangle.uv1 = (Vector2)texCoords[geometry.Indices[i]];
+                        triangle.uv2 = (Vector2)texCoords[geometry.Indices[i + 1]];
+                        triangle.uv2 = (Vector2)texCoords[geometry.Indices[i + 2]];
                         triangle.n1 = n1;
                         triangle.n2 = n2;
                         triangle.n3 = n3;
-                        triangle.id = counter;
+                        triangle.id = triangleIndex++;
+                        triangle.surfaceNormal = surfaceNormal;
+                        triangle.color = c.ToVector3();
+                        //triangle.material = this.material;
                         triangles.Add(triangle);
                     }
                     
