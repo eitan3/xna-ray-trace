@@ -20,6 +20,7 @@ namespace RayTraceProject
         public event EventHandler<AsyncCompletedEventArgs> RenderCompleted;
         public event EventHandler<ProgressChangedEventArgs> RenderProgressChanged;
         private RenderThreadContext[] contexts;
+        private int viewportHeight;
 
         private class RenderThreadContext
         {
@@ -40,6 +41,17 @@ namespace RayTraceProject
             private set;
         }
 
+        public float Progress
+        {
+            get { return (float)this.scanline / (float)CurrentTarget.Height;  }
+        }
+
+        private int scanline = -1;
+        public int GetNextScanline()
+        {
+            return System.Threading.Interlocked.Increment(ref scanline);
+        }
+
         public RayTracer()
         {
             
@@ -53,13 +65,112 @@ namespace RayTraceProject
             this.IsBusy = true;
             System.Threading.Thread asyncThread = new System.Threading.Thread(RenderInternal);
             asyncThread.IsBackground = true;
+            asyncThread.Name = "RenderDispatcherThread";
             asyncThread.Start();
+        }
+
+        Color[] data;
+        public void RenderAsyncV2()
+        {
+            if (this.IsBusy)
+                throw new InvalidOperationException("Current render operation not finished.");
+
+            this.IsBusy = true;
+            System.Threading.Thread asyncThread = new System.Threading.Thread(RenderInternalV2);
+            asyncThread.IsBackground = true;
+            asyncThread.Name = "RenderDispatcherThread";
+            asyncThread.Start();
+        }
+
+        private unsafe int GetNumberOfThreads()
+        {
+            uint affinityMask = (uint)System.Diagnostics.Process.GetCurrentProcess().ProcessorAffinity.ToInt32();
+
+            int processors = 0;
+            uint highbit = 0x80000000;
+            uint mask = 1;
+
+            // "Loop-and-a-half"
+            if ((affinityMask & mask) > 0)
+                processors++;
+            do
+            {
+                mask = mask << 1;
+                if ((affinityMask & mask) > 0)
+                    processors++;
+            } while (mask != highbit);
+
+            return processors;
+        }
+
+        private  void RenderInternalV2()
+        {
+            this.data = new Color[this.CurrentTarget.Width * this.CurrentTarget.Height];
+
+            int numberOfThreads = this.GetNumberOfThreads();
+            System.Threading.Thread[] threads = new System.Threading.Thread[numberOfThreads];
+
+            for (int i = 0; i < numberOfThreads; i++)
+            {
+                threads[i] = new System.Threading.Thread(this.Render);
+                threads[i].IsBackground = true;
+                threads[i].Name = string.Format("RenderThread ({0})", i);
+                threads[i].Start(new Rectangle(0, 0, CurrentTarget.Width, CurrentTarget.Height));
+            }
+
+            for (int i = 0; i < numberOfThreads; i++)
+            {
+                threads[i].Join();
+            }
+
+            CurrentTarget.SetData<Color>(this.data);
+
+            this.OnRenderCompleted();
+        }
+
+        private void Render(object rectangleObject)
+        {
+            Rectangle viewportRectangle = (Rectangle)rectangleObject;
+            bool finished = false;
+            Matrix view = CurrentCamera.View;
+            Matrix proj = CurrentCamera.Projection;
+            Viewport viewport = CurrentGraphicsDevice.Viewport;
+            Ray ray;
+            while (!finished)
+            {
+                int scanline = this.GetNextScanline();
+                if (scanline >= viewportRectangle.Height)
+                {
+                    finished = true;
+                }
+                else
+                {
+                    Vector3 screenSpaceCoord;
+
+                    for (int x = 0; x < viewportRectangle.Width; x++)
+                    {
+                        screenSpaceCoord.X = x;
+                        screenSpaceCoord.Y = scanline;
+                        screenSpaceCoord.Z = 0;
+                        ray.Position = viewport.Unproject(screenSpaceCoord, proj, view, Matrix.Identity);
+
+                        screenSpaceCoord.Z = 1;
+                        Vector3 vector2 = viewport.Unproject(screenSpaceCoord, proj, view, Matrix.Identity);
+                        Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
+                        Vector3.Normalize(ref ray.Direction, out ray.Direction);
+
+                        Color color;
+                        this.CastRay(ref ray, out color, 1, null);
+                        data[((scanline) * viewportRectangle.Width) + x] = color;  
+                    }
+                }
+            }
         }
 
         private void RenderInternal()
         {
             const int RENDER_ROWS = 2;
-            const int RENDER_COLS = 2;
+            const int RENDER_COLS = 4;
             Rectangle[] rects = new Rectangle[RENDER_ROWS * RENDER_COLS];
             int rectWidth = CurrentTarget.Width / RENDER_COLS;
             int rectHeight = CurrentTarget.Height / RENDER_ROWS;
@@ -153,7 +264,7 @@ namespace RayTraceProject
             float? u, v;
             if (CurrentScene.GetRayIntersection(ref ray, out triangle, out u, out v, origin))
             {
-                if (iteration < 2)
+                if (iteration < 8)
                 {
                     Vector3 n1 = triangle.n2 - triangle.n1;
                     Vector3 n2 = triangle.n3 - triangle.n1;
@@ -182,20 +293,28 @@ namespace RayTraceProject
 
                     Material material = triangle.material;
                     Vector3 surfaceColor;
+                    
+#if DEBUG_NORMALS
+                    result = new Color(interpolatedNormal);
+#else
                     if (material.UseTexture)
                     {
                         Vector2 uv1 = triangle.uv2 - triangle.uv1;
                         Vector2 uv2 = triangle.uv3 - triangle.uv1;
                         Vector2 interpolatedUV = triangle.uv1 + (uv1 * u.Value) + (uv2 * v.Value);
 
-                        material.LookupUV(ref interpolatedUV, out surfaceColor);
+
+                        material.LookupUV(interpolatedUV, out surfaceColor);
                     }
                     else
                     {
                         surfaceColor = triangle.color;
                     }
-
                     result = new Color(Vector3.Lerp(reflectionColor.ToVector3(), (surfaceColor * lightIntensity), 1.0f - material.Reflectiveness));
+#endif
+
+
+
                 }
                 else
                 {
@@ -219,7 +338,7 @@ namespace RayTraceProject
                         Vector2 uv2 = triangle.uv3 - triangle.uv1;
                         Vector2 interpolatedUV = triangle.uv1 + (uv1 * u.Value) + (uv2 * v.Value);
 
-                        material.LookupUV(ref interpolatedUV, out surfaceColor);
+                        material.LookupUV(interpolatedUV, out surfaceColor);
                     }
                     else
                     {
