@@ -62,19 +62,7 @@ namespace RayTracePipeline
 
         public override ModelContent Process(NodeContent input, ContentProcessorContext context)
         {
-            switch (fleh)
-            {
-                case 0:
-                    c = Color.Red;
-                    break;
-                case 1:
-                    c = Color.SkyBlue;
-                    break;
-                case 3:
-                    c = Color.White;
-                    break;
-            }
-            fleh++;
+            c = Color.Red;
             
             ModelContent content = base.Process(input, context);
             //System.Diagnostics.Debugger.Launch();
@@ -98,7 +86,7 @@ namespace RayTracePipeline
         private void CreateMaterial()
         {
             
-            this.material = new Material(this.Reflectiveness, this.TextureFilePath);
+            this.material = new Material(this.Reflectiveness, this.UseTexture, this.TextureFilePath);
         }
 
         private void FindVertices(NodeContent node, List<Triangle> triangles)
@@ -130,7 +118,7 @@ namespace RayTracePipeline
                     }
 
                     BasicMaterialContent basicMaterial = geometry.Material as BasicMaterialContent;
-                    Matrix normalTransform = Matrix.CreateRotationX(MathHelper.PiOver2) * Matrix.CreateRotationZ(MathHelper.Pi);
+                    Matrix normalTransform = Matrix.CreateRotationX(MathHelper.PiOver2) *Matrix.CreateRotationZ(MathHelper.Pi);
                     int triangleIndex = 0;
                     for (int i = 0; i < geometry.Indices.Count; i += 3)
                     {
@@ -165,9 +153,12 @@ namespace RayTracePipeline
                         triangle.v1 = v1;
                         triangle.v2 = v2;
                         triangle.v3 = v3;
-                        triangle.uv1 = (Vector2)texCoords[geometry.Indices[i]];
-                        triangle.uv2 = (Vector2)texCoords[geometry.Indices[i + 1]];
-                        triangle.uv2 = (Vector2)texCoords[geometry.Indices[i + 2]];
+                        if (texCoords != null)
+                        {
+                            triangle.uv1 = (Vector2)texCoords[geometry.Indices[i]];
+                            triangle.uv2 = (Vector2)texCoords[geometry.Indices[i + 1]];
+                            triangle.uv2 = (Vector2)texCoords[geometry.Indices[i + 2]];
+                        }
                         triangle.n1 = n1;
                         triangle.n2 = n2;
                         triangle.n3 = n3;

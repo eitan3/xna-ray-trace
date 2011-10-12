@@ -21,16 +21,16 @@ namespace RayTracerTypeLibrary
         { 
         }
 
-        public Material(float reflectiveness)
-            : this(reflectiveness, null)
+        public Material(float reflectiveness, bool useTexture)
+            : this(reflectiveness, useTexture, null)
         {
         }
 
-        public Material(float reflectiveness, string textureFilePath)
+        public Material(float reflectiveness, bool useTexture, string textureFilePath)
         {
             this.reflect = reflectiveness;
             this.textureFilePath = textureFilePath;
-            this.useTexture = !string.IsNullOrEmpty(this.textureFilePath);
+            this.useTexture = useTexture;
         }
 
         public void Init()
@@ -43,22 +43,27 @@ namespace RayTracerTypeLibrary
             }
         }
 
-        public void LookupUV(ref Vector2 uv, out Vector3 color)
+        public void LookupUV(Vector2 uv, out Vector3 color)
         {
-            if (uv.X > 1.0f || uv.Y < 0.0f)
-                uv.X = (float)Math.Abs(uv.X % 1.0f);
-            if (uv.Y > 1.0f || uv.Y < 0.0f)
-                uv.Y = (float)Math.Abs(uv.Y % 1.0f);
+            if (uv.X > 1.0f)
+                uv.X = uv.X % 1.0f;
+            if (uv.Y > 1.0f)
+                uv.Y = uv.Y % 1.0f;
 
-            int x = (int)(uv.X * this.textureData.Width);
-            int y = (int)(uv.Y * this.textureData.Height);
+            if (uv.X < 0.0f)
+                uv.X = 1.0f + (uv.X % 1.0f);
+            if (uv.Y < 0.0f)
+                uv.Y = 1.0f + (uv.Y % 1.0f);
+
+            int x = (int)(uv.X * (this.textureData.Width-1));
+            int y = (int)(uv.Y * (this.textureData.Height-1));
 
             uint argb;
-            lock (this.lockObject)
-            {
+            //lock (this.lockObject)
+            //{
                 uint* dataptr = (uint*)this.textureData.Scan0;
                 argb = *(dataptr + (this.textureData.Width * y) + x);
-            }
+            //}
             color = new Vector3(
                 ((argb >> 16) & 0x000000FF) / 255.0f,
                 ((argb >> 8) & 0x000000FF) / 255.0f,

@@ -1,6 +1,0 @@
-D:\Projects\RayTraceProject\RayTracerTypeLibrary\bin\x86\Debug\RayTracerTypeLibrary.dll
-D:\Projects\RayTraceProject\RayTracerTypeLibrary\bin\x86\Debug\RayTracerTypeLibrary.pdb
-D:\Projects\RayTraceProject\RayTracerTypeLibrary\obj\x86\Debug\ResolveAssemblyReference.cache
-D:\Projects\RayTraceProject\RayTracerTypeLibrary\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
-D:\Projects\RayTraceProject\RayTracerTypeLibrary\obj\x86\Debug\RayTracerTypeLibrary.dll
-D:\Projects\RayTraceProject\RayTracerTypeLibrary\obj\x86\Debug\RayTracerTypeLibrary.pdb

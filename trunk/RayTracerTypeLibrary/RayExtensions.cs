@@ -42,6 +42,44 @@ namespace RayTracerTypeLibrary
                 distance >= 0 &&
                 u + v <= 1);
         }
+        //const float EPSILON = 0.0000001f;
+        //public static bool IntersectsTriangle(this Ray ray, Triangle triangle, out float u, out float v, out float distance)
+        //{
+        //    u = v = distance = 0;
+
+        //    Vector3 Edge1 = triangle.v2 - triangle.v1;
+        //    Vector3 Edge2 = triangle.v3 - triangle.v1;
+
+        //    Vector3 Q;
+        //    Vector3.Cross(ref ray.Direction, ref Edge2, out Q);
+
+        //    float a;
+        //    Vector3.Dot(ref Edge1, ref Q, out a);
+        //    if (a > -EPSILON && a < EPSILON)
+        //        return false;
+
+        //    float f = 1.0f / a;
+
+        //    Vector3 s;
+        //    Vector3.Subtract(ref ray.Position, ref triangle.v1, out s);
+
+        //    Vector3.Dot(ref s, ref Q, out u);
+        //    u *= f;
+        //    if (u < 0.0f)
+        //        return false;
+
+        //    Vector3 r;
+        //    Vector3.Cross(ref s, ref Edge1, out r);
+
+        //    Vector3.Dot(ref ray.Direction, ref r, out v);
+        //    v *= f;
+        //    if (v < 0.0f || u + v > 1.0f)
+        //        return false;
+
+        //    Vector3.Dot(ref Edge2, ref r, out distance);
+        //    distance *= f;
+        //    return true;
+        //}
 
         public static void Draw(this BoundingBox box, GraphicsDevice device)
         {

@@ -1,5 +1,0 @@
-Content\SonyLogo.xnb
-Content\Android.xnb
-Content\Crate_Fragile.xnb
-Content\Plane.xnb
-Content\Diffuse_0.xnb

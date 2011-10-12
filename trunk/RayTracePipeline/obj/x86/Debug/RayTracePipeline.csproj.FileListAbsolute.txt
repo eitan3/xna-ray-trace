@@ -1,7 +1,0 @@
-D:\Projects\RayTraceProject\RayTracePipeline\obj\x86\Debug\ResolveAssemblyReference.cache
-D:\Projects\RayTraceProject\RayTracePipeline\bin\x86\Debug\RayTracePipeline.dll
-D:\Projects\RayTraceProject\RayTracePipeline\bin\x86\Debug\RayTracePipeline.pdb
-D:\Projects\RayTraceProject\RayTracePipeline\obj\x86\Debug\RayTracePipeline.dll
-D:\Projects\RayTraceProject\RayTracePipeline\obj\x86\Debug\RayTracePipeline.pdb
-D:\Projects\RayTraceProject\RayTracePipeline\bin\x86\Debug\RayTracerTypeLibrary.dll
-D:\Projects\RayTraceProject\RayTracePipeline\bin\x86\Debug\RayTracerTypeLibrary.pdb
