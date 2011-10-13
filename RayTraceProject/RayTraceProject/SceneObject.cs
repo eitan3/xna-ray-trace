@@ -14,6 +14,7 @@ namespace RayTraceProject
         BoundingBox boundingBox;
         Vector3 position;
         Vector3 rotation;
+        Vector3 scale = Vector3.One;
         Model model;
         bool worldIsDirty = true;
         Matrix world;
@@ -46,6 +47,19 @@ namespace RayTraceProject
                 if (this.rotation != value)
                 {
                     this.rotation = value;
+                    this.worldIsDirty = true;
+                }
+            }
+        }
+
+        public Vector3 Scale
+        {
+            get { return this.scale; }
+            set
+            {
+                if (this.scale != value)
+                {
+                    this.scale = value;
                     this.worldIsDirty = true;
                 }
             }
@@ -97,7 +111,7 @@ namespace RayTraceProject
         {
             this.worldIsDirty = false;
 
-            Matrix scaleMatrix = Matrix.Identity;
+            Matrix scaleMatrix = Matrix.CreateScale(this.scale);
             Matrix rotationMatrix = Matrix.CreateRotationX(this.rotation.X) * 
                 Matrix.CreateRotationY(this.rotation.Y) * 
                 Matrix.CreateRotationZ(this.rotation.Z);
