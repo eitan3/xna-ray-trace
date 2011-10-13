@@ -31,6 +31,14 @@ namespace RayTracePipeline
     {
         Color c;
         static int fleh = 0;
+        [DisplayName("Diffuse color")]
+        [Description("The diffuse color of the material, if no texture is used.")]
+        [DefaultValue("0;255;0;255")]
+        public Color DiffuseColor
+        {
+            get;
+            set;
+        }
 
         [DisplayName("Texture Filepath")]
         [Description("Filepath to the texture to be used as a diffuse map")]
@@ -104,6 +112,10 @@ namespace RayTracePipeline
                     {
                         texCoords = geometry.Vertices.Channels[VertexChannelNames.TextureCoordinate(0)];
                     }
+                    else if (this.UseTexture)
+                    {
+                        throw new InvalidContentException("Model is built with UseTexure but does not contain any TextureCoordinates.");
+                    }
 
                     VertexChannel colors = null;
                     if (geometry.Vertices.Channels.Contains(VertexChannelNames.Color(0)))
@@ -157,14 +169,14 @@ namespace RayTracePipeline
                         {
                             triangle.uv1 = (Vector2)texCoords[geometry.Indices[i]];
                             triangle.uv2 = (Vector2)texCoords[geometry.Indices[i + 1]];
-                            triangle.uv2 = (Vector2)texCoords[geometry.Indices[i + 2]];
+                            triangle.uv3 = (Vector2)texCoords[geometry.Indices[i + 2]];
                         }
                         triangle.n1 = n1;
                         triangle.n2 = n2;
                         triangle.n3 = n3;
                         triangle.id = triangleIndex++;
                         triangle.surfaceNormal = surfaceNormal;
-                        triangle.color = c.ToVector3();
+                        triangle.color = this.DiffuseColor.ToVector3();
                         //triangle.material = this.material;
                         triangles.Add(triangle);
                     }

@@ -51,8 +51,7 @@
     <Compile Include="Sony_3D_Logo_by_Peter_Iliev_fbx.FBX">
       <Name>SonyLogo</Name>
       <Importer>FbxImporter</Importer>
-      <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_SwapWindingOrder>True</ProcessorParameters_SwapWindingOrder>
+      <Processor>ModelProcessor</Processor>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -61,7 +60,8 @@
       <Importer>XImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
       <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\checkers.bmp</ProcessorParameters_TextureFilePath>
-      <ProcessorParameters_Reflectiveness>0.6</ProcessorParameters_Reflectiveness>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_Reflectiveness>0</ProcessorParameters_Reflectiveness>
       <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
     </Compile>
   </ItemGroup>
@@ -76,9 +76,7 @@
     <Compile Include="Crate_Fragile.FBX">
       <Name>Crate_Fragile</Name>
       <Importer>FbxImporter</Importer>
-      <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\SylvesterStallone.jpg</ProcessorParameters_TextureFilePath>
-      <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
+      <Processor>ModelProcessor</Processor>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -93,15 +91,34 @@
       <Name>coffeepot</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_ColorKeyColor>255, 0, 0, 255</ProcessorParameters_ColorKeyColor>
       <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
     </Compile>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Compile Include="Sphere.fbx">
+      <Name>Sphere</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+    </Compile>
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="Fonts\OnScreenFont.spritefont">
       <Name>OnScreenFont</Name>
       <Importer>FontDescriptionImporter</Importer>
       <Processor>FontDescriptionProcessor</Processor>
+      <SubType>Designer</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="cube.fbx">
+      <Name>cube</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_Scale>6</ProcessorParameters_Scale>
+      <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\checkers.bmp</ProcessorParameters_TextureFilePath>
+      <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
+      <ProcessorParameters_DiffuseColor>255, 0, 0, 255</ProcessorParameters_DiffuseColor>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />

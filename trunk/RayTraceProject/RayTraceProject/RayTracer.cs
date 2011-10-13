@@ -123,6 +123,7 @@ namespace RayTraceProject
                 threads[i].Join();
             }
 
+            CurrentGraphicsDevice.SetRenderTarget(null);
             CurrentTarget.SetData<Color>(this.data);
 
             this.OnRenderCompleted();
@@ -207,6 +208,7 @@ namespace RayTraceProject
         private void OnRenderCompleted()
         {
             this.IsBusy = false;
+            this.scanline = -1;
             if (this.RenderCompleted != null)
                 this.RenderCompleted(this, new AsyncCompletedEventArgs(null, false, null));
         }
@@ -256,6 +258,71 @@ namespace RayTraceProject
             CurrentTarget.SetData<Color>(0, rect, textureData, 0, dataSize);
         }
 
+        private struct Vector7
+        {
+            public float x, y, z, w, s, t, q;
+            public Vector7(float x, float y, float z, float w, float s, float t, float q)
+            {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.w = w;
+                this.s = s;
+                this.t = t;
+                this.q = q;
+            }
+
+            public static Vector7 operator+(Vector7 a, Vector7 b)
+            {
+                return new Vector7(
+                    a.x + b.x,
+                    a.y + b.y,
+                    a.z + b.z,
+                    a.w + b.w,
+                    a.s + b.s,
+                    a.t + b.t,
+                    a.q + b.q);
+            }
+
+            public static Vector7 operator -(Vector7 a, Vector7 b)
+            {
+                return new Vector7(
+                    a.x - b.x,
+                    a.y - b.y,
+                    a.z - b.z,
+                    a.w - b.w,
+                    a.s - b.s,
+                    a.t - b.t,
+                    a.q - b.q);
+            }
+
+            public static Vector7 operator /(Vector7 a, float b)
+            {
+                return new Vector7(
+                    a.x / b,
+                    a.y / b,
+                    a.z / b,
+                    a.w / b,
+                    a.s / b,
+                    a.t / b,
+                    a.q / b);
+            }
+
+            public static Vector7 operator *(Vector7 a, float b)
+            {
+                return new Vector7(
+                    a.x * b,
+                    a.y * b,
+                    a.z * b,
+                    a.w * b,
+                    a.s * b,
+                    a.t * b,
+                    a.q * b);
+            }
+        }
+
+        static float maxU = float.MinValue;
+        static float maxV = float.MinValue;
         public void CastRay(ref Ray ray, out Color result, int iteration, Triangle origin)
         {
             result = Color.White;
@@ -266,6 +333,10 @@ namespace RayTraceProject
             {
                 if (iteration < 8)
                 {
+                    if (u > maxU)
+                        maxU = u.Value;
+                    if (v > maxV)
+                        maxV = v.Value;
                     Vector3 n1 = triangle.n2 - triangle.n1;
                     Vector3 n2 = triangle.n3 - triangle.n1;
                     Vector3 interpolatedNormal = triangle.n1 + (n1 * u.Value) + (n2 * v.Value);
@@ -299,10 +370,39 @@ namespace RayTraceProject
 #else
                     if (material.UseTexture)
                     {
-                        Vector2 uv1 = triangle.uv2 - triangle.uv1;
-                        Vector2 uv2 = triangle.uv3 - triangle.uv1;
-                        Vector2 interpolatedUV = triangle.uv1 + (uv1 * u.Value) + (uv2 * v.Value);
+                        Matrix worldViewProj = Matrix.Identity *CurrentCamera.View * CurrentCamera.Projection;
 
+                        Vector4 pt1 = Vector4.Transform(triangle.v1, worldViewProj);
+                        Vector4 pt2 = Vector4.Transform(triangle.v2, worldViewProj);
+                        Vector4 pt3 = Vector4.Transform(triangle.v3, worldViewProj);
+
+                        Vector7 mega1 = new Vector7(pt1.X, pt1.Y, pt1.Z, pt1.W, triangle.uv1.X, triangle.uv1.Y, 1);
+                        Vector7 mega2 = new Vector7(pt2.X, pt2.Y, pt2.Z, pt2.W, triangle.uv2.X, triangle.uv2.Y, 1);
+                        Vector7 mega3 = new Vector7(pt3.X, pt3.Y, pt3.Z, pt3.W, triangle.uv3.X, triangle.uv3.Y, 1);
+
+                        mega1 /= pt1.W;
+                        mega2 /= pt2.W;
+                        mega3 /= pt3.W;
+
+                        Vector7 megaEdge1 = mega2 - mega1;
+                        Vector7 megaEdge2 = mega3 - mega1;
+                        Vector7 interpolatedMega = mega1 + (megaEdge1 * (v.Value / 0.528f)) + (megaEdge2 * (u.Value / 0.528f));
+
+                        Vector2 interpolatedUV = new Vector2(interpolatedMega.s / interpolatedMega.q, interpolatedMega.t / interpolatedMega.q);
+
+                        //pt1 = pt1 / pt1.W;
+                        //pt2 = pt2 / pt2.W;
+                        //pt3 = pt3 / pt3.W;
+
+                        //float w1 = (1/pt2.W) - (1/pt1.W);
+                        //float w2 = (1 / pt3.W) - (1 / pt1.W);
+                        //float interpolatedW = (1/pt1.W) + (w1 * u.Value) + (w2 * v.Value);
+
+                        //Vector2 uv1 = (triangle.uv2 / pt2.W) - (triangle.uv1 / pt1.W);
+                        //Vector2 uv2 = (triangle.uv3 / pt3.W) - (triangle.uv1 / pt1.W);
+                        //Vector2 interpolatedUV = (triangle.uv1 / pt1.W) + (uv1 * u.Value) + (uv2 * v.Value);
+
+                       // interpolatedUV = interpolatedUV * (1.0f / (interpolatedW));
 
                         material.LookupUV(interpolatedUV, out surfaceColor);
                     }
@@ -334,9 +434,39 @@ namespace RayTraceProject
                     Vector3 surfaceColor;
                     if (material.UseTexture)
                     {
-                        Vector2 uv1 = triangle.uv2 - triangle.uv1;
-                        Vector2 uv2 = triangle.uv3 - triangle.uv1;
-                        Vector2 interpolatedUV = triangle.uv1 + (uv1 * u.Value) + (uv2 * v.Value);
+                        Matrix worldViewProj = Matrix.CreateScale(5, 1, 1) * Matrix.CreateTranslation(0, 10, 0) * CurrentCamera.View * CurrentCamera.Projection;
+
+                        Vector4 pt1 = Vector4.Transform(triangle.v1, worldViewProj);
+                        Vector4 pt2 = Vector4.Transform(triangle.v2, worldViewProj);
+                        Vector4 pt3 = Vector4.Transform(triangle.v3, worldViewProj);
+
+                        Vector7 mega1 = new Vector7(pt1.X, pt1.Y, pt1.Z, pt1.W, triangle.uv1.X, triangle.uv1.Y, 1);
+                        Vector7 mega2 = new Vector7(pt2.X, pt2.Y, pt2.Z, pt2.W, triangle.uv2.X, triangle.uv2.Y, 1);
+                        Vector7 mega3 = new Vector7(pt3.X, pt3.Y, pt3.Z, pt3.W, triangle.uv3.X, triangle.uv3.Y, 1);
+
+                        mega1 /= pt1.W;
+                        mega2 /= pt2.W;
+                        mega3 /= pt3.W;
+
+                        Vector7 megaEdge1 = mega1 - mega2;
+                        Vector7 megaEdge2 = mega1 - mega3;
+                        Vector7 interpolatedMega = mega1 + (megaEdge1 * u.Value) + (megaEdge2 * v.Value);
+
+                        Vector2 interpolatedUV = new Vector2(interpolatedMega.s / interpolatedMega.q, interpolatedMega.t / interpolatedMega.q);
+
+                        //pt1 = pt1 / pt1.W;
+                        //pt2 = pt2 / pt2.W;
+                        //pt3 = pt3 / pt3.W;
+
+                        //float w1 = (1/pt2.W) - (1/pt1.W);
+                        //float w2 = (1 / pt3.W) - (1 / pt1.W);
+                        //float interpolatedW = (1/pt1.W) + (w1 * u.Value) + (w2 * v.Value);
+
+                        //Vector2 uv1 = (triangle.uv2 ) - (triangle.uv1 );
+                        //Vector2 uv2 = (triangle.uv3 ) - (triangle.uv1 );
+                        //Vector2 interpolatedUV = (triangle.uv1 ) + (uv1 * u.Value) + (uv2 * v.Value);
+
+                        // interpolatedUV = interpolatedUV * (1.0f / (interpolatedW));
 
                         material.LookupUV(interpolatedUV, out surfaceColor);
                     }

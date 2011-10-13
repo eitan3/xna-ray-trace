@@ -73,24 +73,35 @@ namespace RayTraceProject
             this.onScreenFont = Content.Load<SpriteFont>("Fonts\\OnScreenFont");
 
             Model planeModel = Content.Load<Model>("Plane");
+            Model androidModel = Content.Load<Model>("SonyLogo");
+            Model coffeeModel = Content.Load<Model>("coffeepot");
+            Model sphereModel = Content.Load<Model>("Sphere");
+            Model crateModel = Content.Load<Model>("Crate_Fragile");
+            Model cubeModel = Content.Load<Model>("cube");
             plane = new SceneObject(planeModel, Vector3.Zero, Vector3.Zero);
 
-            Model androidModel = Content.Load<Model>("SonyLogo");
-            android = new SceneObject(androidModel, new Vector3(0, 8, 0), Vector3.Zero);
-            android.Rotation = new Vector3(0, -MathHelper.PiOver2, 0);
+            
+            //android = new SceneObject(androidModel, new Vector3(0, 8, 0), Vector3.Zero);
+            //android.Rotation = new Vector3(0, -MathHelper.PiOver2, 0);
 
-            Model coffeeModel = Content.Load<Model>("coffeepot");
+            
             crate = new SceneObject(coffeeModel, new Vector3(0, 9, 0), Vector3.Zero);
 
-            Model crateModel = Content.Load<Model>("Crate_Fragile");
-            crate2 = new SceneObject(crateModel, new Vector3(50, 9, 0), Vector3.Zero);
+
+            SceneObject sphere = new SceneObject(sphereModel, new Vector3(0, 10, 0), Vector3.Zero);
+            SceneObject cube = new SceneObject(cubeModel, new Vector3(0, 10, 0), Vector3.Zero);
+            cube.Scale = new Vector3(5, 1, 1);
+            
+            //crate2 = new SceneObject(crateModel, new Vector3(50, 9, 0), Vector3.Zero);
 
             
 
             this.scene = new Spatial.OctreeSpatialManager();
 
             scene.Bodies.Add(plane);
-            scene.Bodies.Add(crate);
+            //scene.Bodies.Add(crate);
+            //scene.Bodies.Add(sphere);
+            //scene.Bodies.Add(cube);
             //scene.Bodies.Add(android); // Avoid using android model until it works. It has far too many triangles to use for testing.
 
             this.scene.Build();
@@ -98,7 +109,8 @@ namespace RayTraceProject
             //this.camera = new Camera(new Vector3(0, 17, 70), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             //this.camera = new Camera(new Vector3(0, 3, 17), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             //this.camera = new Camera(new Vector3(-58, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            this.camera = new Camera(new Vector3(-58, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            //this.camera = new Camera(new Vector3(-58, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            this.camera = new Camera(new Vector3(-58, 900, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
@@ -230,7 +242,7 @@ namespace RayTraceProject
                 }
 
                 spriteBatch.Begin();
-                spriteBatch.DrawString(this.onScreenFont, this.progressText, new Vector2(16, 16), Color.White);
+                spriteBatch.DrawString(this.onScreenFont, string.Format("{0}\n{1}", progressText, rayTraceWatch.Elapsed.ToString()), new Vector2(16, 16), Color.White);
                 spriteBatch.End();
             }
 
