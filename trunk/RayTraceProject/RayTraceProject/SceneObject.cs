@@ -10,7 +10,7 @@ namespace RayTraceProject
 {
     class SceneObject : Spatial.ISpatialBody
     {
-        List<Triangle> vertices;
+        List<Triangle> triangles;
         BoundingBox boundingBox;
         Vector3 position;
         Vector3 rotation;
@@ -19,6 +19,13 @@ namespace RayTraceProject
         bool worldIsDirty = true;
         Matrix world;
         Matrix inverseWorld;
+
+#if DEBUG
+        public static BasicEffect boundingEffect = null;
+        static RasterizerState boundingRasterState;
+        VertexPositionColor[] boundingVertices;
+        int[] boundingIndices;
+#endif
 
         public BoundingBox BoundingBox
         {
@@ -85,7 +92,13 @@ namespace RayTraceProject
             }
         }
 
-        public SceneObject(Model model, Vector3 pos, Vector3 rot)
+        public string Name
+        {
+            get;
+            set;
+        }
+
+        public SceneObject(GraphicsDevice device, Model model, Vector3 pos, Vector3 rot)
         {
             this.model = model;
             this.position = pos;
@@ -95,16 +108,57 @@ namespace RayTraceProject
                 throw new ArgumentException("Model must be built using the TracerModelProcessor");
 
             Dictionary<string, object> modelData = (Dictionary<string, object>)model.Tag;
-            this.vertices = (List<Triangle>)modelData["vertices"];
+            this.triangles = (List<Triangle>)modelData["vertices"];
             this.boundingBox = (BoundingBox)modelData["box"];
-
             Material material = (Material)modelData["material"];
             material.Init();
-            for (int i = 0; i < this.vertices.Count; i++)
+            for (int i = 0; i < this.triangles.Count; i++)
             {
-                this.vertices[i].SetMaterial(material);
+                this.triangles[i].SetMaterial(material);
             }
 
+#if DEBUG
+            if(SceneObject.boundingEffect == null)
+                SceneObject.boundingEffect = new BasicEffect(device);
+            if (SceneObject.boundingRasterState == null)
+            {
+                SceneObject.boundingRasterState = new RasterizerState();
+                SceneObject.boundingRasterState.CullMode = CullMode.CullCounterClockwiseFace;
+                SceneObject.boundingRasterState.FillMode = FillMode.WireFrame;
+            }
+            this.boundingVertices = new VertexPositionColor[]
+                {
+                    new VertexPositionColor(new Vector3(this.boundingBox.Min.X, this.boundingBox.Min.Y, this.boundingBox.Min.Z), Color.White),
+                    new VertexPositionColor(new Vector3(this.boundingBox.Max.X, this.boundingBox.Min.Y, this.boundingBox.Min.Z), Color.White),
+                    new VertexPositionColor(new Vector3(this.boundingBox.Max.X, this.boundingBox.Max.Y, this.boundingBox.Min.Z), Color.White),
+                    new VertexPositionColor(new Vector3(this.boundingBox.Min.X, this.boundingBox.Max.Y, this.boundingBox.Min.Z), Color.White),
+                    new VertexPositionColor(new Vector3(this.boundingBox.Min.X, this.boundingBox.Min.Y, this.boundingBox.Max.Z), Color.White),
+                    new VertexPositionColor(new Vector3(this.boundingBox.Max.X, this.boundingBox.Min.Y, this.boundingBox.Max.Z), Color.White),
+                    new VertexPositionColor(new Vector3(this.boundingBox.Max.X, this.boundingBox.Max.Y, this.boundingBox.Max.Z), Color.White),
+                    new VertexPositionColor(new Vector3(this.boundingBox.Min.X, this.boundingBox.Max.Y, this.boundingBox.Max.Z), Color.White)
+                };
+            this.boundingIndices = new int[]
+                {
+                    // Back face
+                    2, 3, 1,
+                    3, 0, 1,
+                    // Right face
+                    6, 2, 5,
+                    2, 1, 5,
+                    // Front face
+                    7, 6, 4,
+                    6, 5, 4,
+                    // Left face
+                    3, 7, 0,
+                    7, 4, 0,
+                    // Top face
+                    3, 2, 7,
+                    2, 6, 7,
+                    // Bottom face
+                    4, 5, 0,
+                    5, 1, 0
+                };
+#endif
         }
 
         private void BuildWorld()
@@ -142,27 +196,34 @@ namespace RayTraceProject
                 this.model.Meshes[i].Draw();
             }
 
-            VertexPositionNormalTexture[] verts = new VertexPositionNormalTexture[this.vertices.Count * 3];
-            for (int i = 0; i < this.vertices.Count; i++)
-            {
-                verts[i * 3] = new VertexPositionNormalTexture(this.vertices[i].v1, Vector3.Up, Vector2.Zero);
-                verts[(i * 3) + 1] = new VertexPositionNormalTexture(this.vertices[i].v2, Vector3.Up, Vector2.UnitX);
-                verts[(i * 3) + 2] = new VertexPositionNormalTexture(this.vertices[i].v3, Vector3.Up, Vector2.One);
-            }
+            //VertexPositionNormalTexture[] verts = new VertexPositionNormalTexture[this.triangles.Count * 3];
+            //for (int i = 0; i < this.triangles.Count; i++)
+            //{
+            //    verts[i * 3] = new VertexPositionNormalTexture(this.triangles[i].v1, Vector3.Up, Vector2.Zero);
+            //    verts[(i * 3) + 1] = new VertexPositionNormalTexture(this.triangles[i].v2, Vector3.Up, Vector2.UnitX);
+            //    verts[(i * 3) + 2] = new VertexPositionNormalTexture(this.triangles[i].v3, Vector3.Up, Vector2.One);
+            //}
 
-            if(eff == null)
-                eff = new BasicEffect(device);
-            eff.World = this.world;
-            eff.Projection = proj;
-            eff.View = view;
-            eff.CurrentTechnique.Passes[0].Apply();
-            //device.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, verts, 0, vertices.Count, VertexPositionNormalTexture.VertexDeclaration);
+#if DEBUG
+            RasterizerState oldRasterState = device.RasterizerState;
+            device.RasterizerState = SceneObject.boundingRasterState;
+            SceneObject.boundingEffect.World = this.world;
+            SceneObject.boundingEffect.View = view;
+            SceneObject.boundingEffect.Projection = proj;
+            SceneObject.boundingEffect.DiffuseColor = Vector3.One;
+            SceneObject.boundingEffect.CurrentTechnique.Passes[0].Apply();
+            device.DrawUserIndexedPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, this.boundingVertices, 0, this.boundingVertices.Length, this.boundingIndices, 0, 12);
+            device.RasterizerState = oldRasterState;
+#endif
+            //eff.EnableDefaultLighting();
+            //eff.CurrentTechnique.Passes[0].Apply();
+            ////device.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.TriangleList, verts, 0, vertices.Count, VertexPositionNormalTexture.VertexDeclaration);
+            //this.boundingBox.Draw(device);
         }
-        BasicEffect eff = null;
 
         public List<Triangle> GetTriangles()
         {
-            return this.vertices;
+            return this.triangles;
         }
 
         public bool RayIntersects(Ray ray)
@@ -191,9 +252,9 @@ namespace RayTraceProject
                 Vector3 vector1, vector2, vector3;
                 vector1 = vector2 = vector3 = Vector3.Zero;
 
-                for (int i = 0; i < this.vertices.Count; i++)
+                for (int i = 0; i < this.triangles.Count; i++)
                 {
-                    Triangle triangle = this.vertices[i];
+                    Triangle triangle = this.triangles[i];
 
                     //RayTriangleIntesercts(ray, triangle);
                     //RayIntersectsTriangle(ref ray, ref vector1, ref vector2, ref vector3, out currentDistance);

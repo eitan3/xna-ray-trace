@@ -20,7 +20,7 @@ namespace RayTraceProject.Spatial
             public List<ISpatialBody> containingObjects;
         }
         private CubeNode root;
-        private int itemTreshold = 3;
+        private int itemTreshold = 10;
         private List<ISpatialBody> objects;
         private uint depth;
 
@@ -465,10 +465,11 @@ namespace RayTraceProject.Spatial
         }
 
 
-        public bool GetRayIntersection(ref Ray ray, out Triangle triangle, out float? u, out float? v, Triangle origin)
+        public bool GetRayIntersection(Ray ray, out Triangle triangle, out float? u, out float? v, out Vector3? worldPosition, Triangle origin)
         {
             triangle = null;
             u = v = 0;
+            worldPosition = Vector3.Zero;
 
             SortedDictionary<float, CubeNode> cubeoids = new SortedDictionary<float, CubeNode>();
             this.GetRayCubeNodeIntersections(ref ray, this.root, cubeoids);
@@ -484,6 +485,7 @@ namespace RayTraceProject.Spatial
             float intersectionV = 0;
             Triangle intersectedTriangle = null;
             bool intersectionFound = false;
+            SceneObject intersectedSceneObject = null;
             while (!intersectionFound && cubeoidIndex < intersectedCubeoids.Count)
             {
                 List<ISpatialBody> objects = intersectedCubeoids[cubeoidIndex++].containingObjects;
@@ -521,6 +523,7 @@ namespace RayTraceProject.Spatial
                                     intersectionU = currentU;
                                     intersectionV = currentV;
                                     intersectedTriangle = triangles[j];
+                                    intersectedSceneObject = sceneObject;
 
                                     // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
                                     intersectionFound = true;
@@ -536,6 +539,14 @@ namespace RayTraceProject.Spatial
                 triangle = intersectedTriangle;
                 u = intersectionU;
                 v = intersectionV;
+
+                // Calculate world position of intersection.
+                Vector3 p1 = triangle.v2 - triangle.v1;
+                Vector3 p2 = triangle.v3 - triangle.v1;
+                Vector3 interpolatedPosition = triangle.v1 + (p1 * u.Value) + (p2 * v.Value);
+                Matrix world = intersectedSceneObject.World;
+                Vector3.Transform(ref interpolatedPosition, ref world, out interpolatedPosition);
+                worldPosition = interpolatedPosition;
             }
 
             return intersectionFound;

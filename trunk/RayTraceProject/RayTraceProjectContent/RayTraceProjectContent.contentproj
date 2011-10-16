@@ -58,11 +58,7 @@
     <Compile Include="plane.x">
       <Name>Plane</Name>
       <Importer>XImporter</Importer>
-      <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\checkers.bmp</ProcessorParameters_TextureFilePath>
-      <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
-      <ProcessorParameters_Reflectiveness>0</ProcessorParameters_Reflectiveness>
-      <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
+      <Processor>ModelProcessor</Processor>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -77,6 +73,7 @@
       <Name>Crate_Fragile</Name>
       <Importer>FbxImporter</Importer>
       <Processor>ModelProcessor</Processor>
+      <ProcessorParameters_Scale>0.6</ProcessorParameters_Scale>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -91,7 +88,7 @@
       <Name>coffeepot</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_ColorKeyColor>255, 0, 0, 255</ProcessorParameters_ColorKeyColor>
+      <ProcessorParameters_DiffuseColor>255, 0, 0, 255</ProcessorParameters_DiffuseColor>
       <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
     </Compile>
   </ItemGroup>
@@ -100,6 +97,9 @@
       <Name>Sphere</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_Scale>5</ProcessorParameters_Scale>
+      <ProcessorParameters_DiffuseColor>255, 255, 0, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -114,11 +114,18 @@
     <Compile Include="cube.fbx">
       <Name>cube</Name>
       <Importer>FbxImporter</Importer>
+      <Processor>ModelProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="plane.fbx">
+      <Name>ground</Name>
+      <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_Scale>6</ProcessorParameters_Scale>
       <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\checkers.bmp</ProcessorParameters_TextureFilePath>
       <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
-      <ProcessorParameters_DiffuseColor>255, 0, 0, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_Reflectiveness>0</ProcessorParameters_Reflectiveness>
+      <ProcessorParameters_Scale>100</ProcessorParameters_Scale>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />
