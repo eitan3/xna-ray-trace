@@ -113,7 +113,7 @@ namespace RayTraceProject
         {
             this.data = new Color[this.CurrentTarget.Width * this.CurrentTarget.Height];
 
-            int numberOfThreads = 1; // this.GetNumberOfThreads();
+            int numberOfThreads = this.GetNumberOfThreads();
             System.Threading.Thread[] threads = new System.Threading.Thread[numberOfThreads];
 
             for (int i = 0; i < numberOfThreads; i++)

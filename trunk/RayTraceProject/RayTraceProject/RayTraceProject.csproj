@@ -95,6 +95,7 @@
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml">
       <Private>False</Private>
     </Reference>
@@ -125,6 +126,10 @@
     <Content Include="GameThumbnail.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\aviFileWrapper_src\AviFile.csproj">
+      <Project>{ABB32A29-AF50-47FA-B243-5FD75A5ABA54}</Project>
+      <Name>AviFile</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\RayTracerTypeLibrary\RayTracerTypeLibrary.csproj">
       <Project>{00679EDE-9474-4EEB-9869-82394E893969}</Project>
       <Name>RayTracerTypeLibrary</Name>

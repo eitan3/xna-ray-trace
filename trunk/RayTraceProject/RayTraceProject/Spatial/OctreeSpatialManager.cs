@@ -20,7 +20,7 @@ namespace RayTraceProject.Spatial
             public List<ISpatialBody> containingObjects;
         }
         private CubeNode root;
-        private int itemTreshold = 10;
+        private int itemTreshold = 50;
         private List<ISpatialBody> objects;
         private uint depth;
 

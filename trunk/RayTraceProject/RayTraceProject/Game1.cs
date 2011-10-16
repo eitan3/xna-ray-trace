@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using RayTracerTypeLibrary;
 using System.Diagnostics;
+using AviFile;
 
 namespace RayTraceProject
 {
@@ -35,6 +36,7 @@ namespace RayTraceProject
         RayTracer tracer;
         SceneObject plane;
         Stopwatch rayTraceWatch;
+        private string folder;
 
         public Game1()
         {
@@ -89,7 +91,11 @@ namespace RayTraceProject
             //android = new SceneObject(androidModel, new Vector3(0, 8, 0), Vector3.Zero);
             //android.Rotation = new Vector3(0, -MathHelper.PiOver2, 0);
 
-            
+            this.folder = @"D:\Videos"; //System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
+            if (!System.IO.Directory.Exists(folder))
+            {
+                System.IO.Directory.CreateDirectory(this.folder);
+            }
             crate = new SceneObject(GraphicsDevice, coffeeModel, new Vector3(0, 9, 0), Vector3.Zero);
 
 
@@ -112,28 +118,13 @@ namespace RayTraceProject
             
             scene.Bodies.Add(sphere);
 
-            float radians = 0;
-            for (int i = 0; i < 4; i++)
-            {
-                Vector3 pos = new Vector3((float)Math.Sin(radians) * 10, 9, (float)Math.Cos(radians) * 10);
-                SceneObject smallSphere = new SceneObject(GraphicsDevice, sphereModel, pos, Vector3.Zero);
-                smallSphere.Scale = new Vector3(0.4f);
-                this.scene.Bodies.Add(smallSphere);
-                radians += MathHelper.PiOver2;
-            }
-            //scene.Bodies.Add(cube);
-            //scene.Bodies.Add(android); // Avoid using android model until it works. It has far too many triangles to use for testing.
-
             this.scene.Build();
 
-            //this.camera = new Camera(new Vector3(0, 17, 70), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            //this.camera = new Camera(new Vector3(0, 3, 17), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            //this.camera = new Camera(new Vector3(-58, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            this.camera = new Camera(new Vector3(0, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            //this.camera = new Camera(new Vector3(-58, 900, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            this.camera = new Camera(new Vector3((float)Math.Sin(rot) * 60, 4, (float)Math.Cos(rot) * 60), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
+            tracer.TextureFiltering = Material.TextureFiltering.Bilinear;
             tracer.CurrentCamera = this.camera;
             tracer.CurrentScene = this.scene;
             tracer.CurrentTarget = rayTraceTarget;
@@ -147,10 +138,56 @@ namespace RayTraceProject
         {
         }
 
+        bool finished = false;
+        bool videocompiled = false;
+        int frame = 0;
+        float rot = 0;
+        float rot_step = MathHelper.TwoPi / 360.0f;
+        int maxI = 2000;
         void tracer_RenderCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
             rayTraceWatch.Stop();
             Debug.WriteLine(rayTraceWatch.Elapsed.ToString());
+            string filePath = System.IO.Path.Combine(this.folder, string.Format("image{0}.png", frame++));
+            using(System.IO.FileStream fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
+            {
+                rayTraceTarget.SaveAsPng(fs, rayTraceTarget.Width, rayTraceTarget.Height);
+                fs.Close();
+            }
+
+            rot += rot_step;
+            if(rot >= MathHelper.TwoPi)
+            {
+                finished = true;
+            }
+
+            camera.Position = new Vector3((float)Math.Sin(rot) * 60, 4, (float)Math.Cos(rot) * 60);
+
+            //if (frame == maxI)
+            //{
+            //    finished = true;
+            //}
+
+            
+        }
+
+        private void compileVideo()
+        {
+            AviManager aviManager = new AviManager(System.IO.Path.Combine(this.folder, "Video.avi"), false);
+
+            System.Drawing.Bitmap firstBitmap = (System.Drawing.Bitmap)System.Drawing.Bitmap.FromFile(System.IO.Path.Combine(this.folder, string.Format("image{0}.png", 0)));
+
+            VideoStream aviStream = aviManager.AddVideoStream(true, 30, firstBitmap);
+
+            System.Drawing.Bitmap bitmap;
+            for (int i = 1; i < frame; i++)
+            {
+                bitmap = (System.Drawing.Bitmap)System.Drawing.Bitmap.FromFile(System.IO.Path.Combine(this.folder, string.Format("image{0}.png", i)));
+                aviStream.AddFrame(bitmap);
+                bitmap.Dispose();
+            }
+            aviManager.Close();
+            Debug.WriteLine("Video compiled");
         }
 
 
@@ -176,29 +213,29 @@ namespace RayTraceProject
                 this.Exit();
             KeyboardState state = Keyboard.GetState();
 
-            Vector3 translation = Vector3.Zero;
-            if (state.IsKeyDown(Keys.Q))
-                translation += new Vector3(0, 1, 0);
-            if (state.IsKeyDown(Keys.E))
-                translation += new Vector3(0, -1, 0);
-            if(state.IsKeyDown(Keys.W))
-                translation += new Vector3(0, 0, 1);
-            if (state.IsKeyDown(Keys.S))
-                translation += new Vector3(0, 0, -1);
-            if (state.IsKeyDown(Keys.A))
-                translation += new Vector3(-1, 0, 0);
-            if (state.IsKeyDown(Keys.D))
-                translation += new Vector3(1, 0, 0);
-            float speedFactor = 1.0f;
-            if (state.IsKeyDown(Keys.D1) && lastState.IsKeyUp(Keys.D1))
-                this.useWireframe = !this.useWireframe;
-            if (state.IsKeyDown(Keys.Back))
-                tracer.points.Clear();
+            //Vector3 translation = Vector3.Zero;
+            //if (state.IsKeyDown(Keys.Q))
+            //    translation += new Vector3(0, 1, 0);
+            //if (state.IsKeyDown(Keys.E))
+            //    translation += new Vector3(0, -1, 0);
+            //if(state.IsKeyDown(Keys.W))
+            //    translation += new Vector3(0, 0, 1);
+            //if (state.IsKeyDown(Keys.S))
+            //    translation += new Vector3(0, 0, -1);
+            //if (state.IsKeyDown(Keys.A))
+            //    translation += new Vector3(-1, 0, 0);
+            //if (state.IsKeyDown(Keys.D))
+            //    translation += new Vector3(1, 0, 0);
+            //float speedFactor = 1.0f;
+            //if (state.IsKeyDown(Keys.D1) && lastState.IsKeyUp(Keys.D1))
+            //    this.useWireframe = !this.useWireframe;
+            //if (state.IsKeyDown(Keys.Back))
+            //    tracer.points.Clear();
 
-            if (state.IsKeyDown(Keys.LeftShift))
-                speedFactor *= 10;
+            //if (state.IsKeyDown(Keys.LeftShift))
+            //    speedFactor *= 10;
 
-            camera.Position += translation * speedFactor;
+            //camera.Position += translation * speedFactor;
 
             if (state.IsKeyDown(Keys.Enter) && !showRayTraceImage && !tracer.IsBusy)
             {
@@ -216,35 +253,35 @@ namespace RayTraceProject
             MouseState mouseState = Mouse.GetState();
             Vector2 mouseCoord = new Vector2(mouseState.X, mouseState.Y);
 
-            if (mouseState.RightButton == ButtonState.Pressed)
-            {
-                Vector3 delta = new Vector3(lastMouseCoord - mouseCoord, 0);
-                delta.X *= -1;
-                camera.Position += delta;
-                camera.Target += delta;
-            }
-            if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
-            {
+            //if (mouseState.RightButton == ButtonState.Pressed)
+            //{
+            //    Vector3 delta = new Vector3(lastMouseCoord - mouseCoord, 0);
+            //    delta.X *= -1;
+            //    camera.Position += delta;
+            //    camera.Target += delta;
+            //}
+            //if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
+            //{
 
-                Vector3 screenSpaceCoord;
-                Ray ray;
-                screenSpaceCoord.X = mouseState.X;
-                screenSpaceCoord.Y = mouseState.Y;
-                screenSpaceCoord.Z = 0;
-                ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+            //    Vector3 screenSpaceCoord;
+            //    Ray ray;
+            //    screenSpaceCoord.X = mouseState.X;
+            //    screenSpaceCoord.Y = mouseState.Y;
+            //    screenSpaceCoord.Z = 0;
+            //    ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
 
-                screenSpaceCoord.Z = 1;
-                Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
-                Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
-                Vector3.Normalize(ref ray.Direction, out ray.Direction);
-                if (state.IsKeyDown(Keys.LeftControl))
-                {
-                    int asd = 24356;
-                }
-                Color color;
-                tracer.CastRay(ray, out color, 1, null);
+            //    screenSpaceCoord.Z = 1;
+            //    Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+            //    Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
+            //    Vector3.Normalize(ref ray.Direction, out ray.Direction);
+            //    if (state.IsKeyDown(Keys.LeftControl))
+            //    {
+            //        int asd = 24356;
+            //    }
+            //    Color color;
+            //    tracer.CastRay(ray, out color, 1, null);
                 
-            }
+            //}
 
             if (DateTime.Now.Month == 13)
             {
@@ -269,6 +306,17 @@ namespace RayTraceProject
             else
             {
                 onScreenText = string.Format("Camera: {0}", camera.Position);
+                if (!finished)
+                {
+                    rayTraceWatch = Stopwatch.StartNew();
+                    this.tracer.RenderAsyncV2();
+                }
+                else if(!videocompiled)
+                {
+                    this.videocompiled = true;
+                    this.compileVideo();
+
+                }
             }
 
             lastMouseCoord = mouseCoord;
