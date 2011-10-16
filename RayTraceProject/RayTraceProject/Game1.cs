@@ -20,7 +20,8 @@ namespace RayTraceProject
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        RasterizerState rasterState;
+        RasterizerState solidRasterState, wireRasterState;
+        bool useWireframe = false;
         SpriteFont onScreenFont;
         KeyboardState lastState;
         MouseState lastMouse;
@@ -38,8 +39,8 @@ namespace RayTraceProject
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
-            graphics.PreferredBackBufferWidth = 800;
-            graphics.PreferredBackBufferHeight = 600;
+            graphics.PreferredBackBufferWidth = 1024;
+            graphics.PreferredBackBufferHeight = 768;
             Content.RootDirectory = "Content";
             this.IsMouseVisible = true;
         }
@@ -53,9 +54,13 @@ namespace RayTraceProject
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            this.rasterState = new RasterizerState();
-            this.rasterState.CullMode = CullMode.CullCounterClockwiseFace;
-            this.rasterState.FillMode = FillMode.Solid; // FillMode.WireFrame;
+            this.solidRasterState = new RasterizerState();
+            this.solidRasterState.CullMode = CullMode.CullCounterClockwiseFace;
+            this.solidRasterState.FillMode = FillMode.Solid; // FillMode.WireFrame;
+            this.wireRasterState = new RasterizerState();
+            this.wireRasterState.CullMode = CullMode.CullCounterClockwiseFace;
+            this.wireRasterState.FillMode = FillMode.WireFrame;
+
 
             base.Initialize();
         }
@@ -72,25 +77,29 @@ namespace RayTraceProject
 
             this.onScreenFont = Content.Load<SpriteFont>("Fonts\\OnScreenFont");
 
-            Model planeModel = Content.Load<Model>("Plane");
+            Model planeModel = Content.Load<Model>("Ground");
             Model androidModel = Content.Load<Model>("SonyLogo");
             Model coffeeModel = Content.Load<Model>("coffeepot");
             Model sphereModel = Content.Load<Model>("Sphere");
             Model crateModel = Content.Load<Model>("Crate_Fragile");
             Model cubeModel = Content.Load<Model>("cube");
-            plane = new SceneObject(planeModel, Vector3.Zero, Vector3.Zero);
-
+            plane = new SceneObject(GraphicsDevice, planeModel, Vector3.Zero, Vector3.Zero);
+            plane.Name = "Ground";
             
             //android = new SceneObject(androidModel, new Vector3(0, 8, 0), Vector3.Zero);
             //android.Rotation = new Vector3(0, -MathHelper.PiOver2, 0);
 
             
-            crate = new SceneObject(coffeeModel, new Vector3(0, 9, 0), Vector3.Zero);
+            crate = new SceneObject(GraphicsDevice, coffeeModel, new Vector3(0, 9, 0), Vector3.Zero);
 
 
-            SceneObject sphere = new SceneObject(sphereModel, new Vector3(0, 10, 0), Vector3.Zero);
-            SceneObject cube = new SceneObject(cubeModel, new Vector3(0, 10, 0), Vector3.Zero);
-            cube.Scale = new Vector3(5, 1, 1);
+            SceneObject sphere = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 9, 0), Vector3.Zero);
+            sphere.Name = "Sphere";
+
+
+
+            //SceneObject cube = new SceneObject(GraphicsDevice, cubeModel, new Vector3(0, 10, 0), Vector3.Zero);
+            //cube.Scale = new Vector3(5, 1, 1);
             
             //crate2 = new SceneObject(crateModel, new Vector3(50, 9, 0), Vector3.Zero);
 
@@ -98,9 +107,20 @@ namespace RayTraceProject
 
             this.scene = new Spatial.OctreeSpatialManager();
 
-            scene.Bodies.Add(plane);
             //scene.Bodies.Add(crate);
-            //scene.Bodies.Add(sphere);
+            scene.Bodies.Add(plane);
+            
+            scene.Bodies.Add(sphere);
+
+            float radians = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 pos = new Vector3((float)Math.Sin(radians) * 10, 9, (float)Math.Cos(radians) * 10);
+                SceneObject smallSphere = new SceneObject(GraphicsDevice, sphereModel, pos, Vector3.Zero);
+                smallSphere.Scale = new Vector3(0.4f);
+                this.scene.Bodies.Add(smallSphere);
+                radians += MathHelper.PiOver2;
+            }
             //scene.Bodies.Add(cube);
             //scene.Bodies.Add(android); // Avoid using android model until it works. It has far too many triangles to use for testing.
 
@@ -109,8 +129,8 @@ namespace RayTraceProject
             //this.camera = new Camera(new Vector3(0, 17, 70), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             //this.camera = new Camera(new Vector3(0, 3, 17), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             //this.camera = new Camera(new Vector3(-58, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            //this.camera = new Camera(new Vector3(-58, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            this.camera = new Camera(new Vector3(-58, 900, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            this.camera = new Camera(new Vector3(0, 20, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            //this.camera = new Camera(new Vector3(-58, 900, -21), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
@@ -170,6 +190,10 @@ namespace RayTraceProject
             if (state.IsKeyDown(Keys.D))
                 translation += new Vector3(1, 0, 0);
             float speedFactor = 1.0f;
+            if (state.IsKeyDown(Keys.D1) && lastState.IsKeyUp(Keys.D1))
+                this.useWireframe = !this.useWireframe;
+            if (state.IsKeyDown(Keys.Back))
+                tracer.points.Clear();
 
             if (state.IsKeyDown(Keys.LeftShift))
                 speedFactor *= 10;
@@ -199,6 +223,54 @@ namespace RayTraceProject
                 camera.Position += delta;
                 camera.Target += delta;
             }
+            if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
+            {
+
+                Vector3 screenSpaceCoord;
+                Ray ray;
+                screenSpaceCoord.X = mouseState.X;
+                screenSpaceCoord.Y = mouseState.Y;
+                screenSpaceCoord.Z = 0;
+                ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+
+                screenSpaceCoord.Z = 1;
+                Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+                Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
+                Vector3.Normalize(ref ray.Direction, out ray.Direction);
+                if (state.IsKeyDown(Keys.LeftControl))
+                {
+                    int asd = 24356;
+                }
+                Color color;
+                tracer.CastRay(ray, out color, 1, null);
+                
+            }
+
+            if (DateTime.Now.Month == 13)
+            {
+                Ray ray = new Ray(new Vector3(-40, 20, -40),new Vector3(0, -1, 1));
+                ray.Direction.Normalize();
+
+                Color color;
+                tracer.CastRay(ray, out color, 1, null);
+            }
+
+            if (tracer.IsBusy)
+            {
+                progressUpdate += gameTime.ElapsedGameTime.TotalSeconds;
+                if (progressUpdate > 3.0)
+                {
+                    progressUpdate -= 3.0;
+                    currentProgress = tracer.Progress * 100;
+                }
+
+                onScreenText = string.Format("Elapsed: {0}\nProgress: {1}%", rayTraceWatch.Elapsed.ToString(), currentProgress);
+            }
+            else
+            {
+                onScreenText = string.Format("Camera: {0}", camera.Position);
+            }
+
             lastMouseCoord = mouseCoord;
             lastState = state;
             lastMouse = mouseState;
@@ -207,7 +279,9 @@ namespace RayTraceProject
         }
         bool showRayTraceImage;
         double progressUpdate;
+        float currentProgress;
         string progressText = String.Empty;
+        string onScreenText;
         /// <summary>
         /// This is called when the game should draw itself.
         /// </summary>
@@ -215,7 +289,10 @@ namespace RayTraceProject
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Magenta);
-            GraphicsDevice.RasterizerState = rasterState;
+            if (this.useWireframe)
+                GraphicsDevice.RasterizerState = wireRasterState;
+            else
+                GraphicsDevice.RasterizerState = solidRasterState;
             GraphicsDevice.BlendState = BlendState.Opaque;
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             if (showRayTraceImage && !tracer.IsBusy)
@@ -232,19 +309,24 @@ namespace RayTraceProject
                 scene.Draw(camera, ref view, ref proj, this.GraphicsDevice, gameTime);
             }
 
-            if (tracer.IsBusy)
-            {
-                progressUpdate += gameTime.ElapsedGameTime.TotalSeconds;
-                if (progressUpdate > 3.0)
-                {
-                    progressUpdate -= 3.0;
-                    progressText = String.Format("Progress: {0}%", tracer.Progress * 100);
-                }
+            spriteBatch.Begin();
+            spriteBatch.DrawString(this.onScreenFont, onScreenText, new Vector2(16, 16), Color.White);
+            spriteBatch.End();
 
-                spriteBatch.Begin();
-                spriteBatch.DrawString(this.onScreenFont, string.Format("{0}\n{1}", progressText, rayTraceWatch.Elapsed.ToString()), new Vector2(16, 16), Color.White);
-                spriteBatch.End();
+#if DEBUG
+            if (tracer.points.Count > 0 && !tracer.IsBusy)
+            {
+                GraphicsDevice.BlendState = BlendState.AlphaBlend;
+                SceneObject.boundingEffect.Alpha = 0.75f;
+                SceneObject.boundingEffect.DiffuseColor = Vector3.One;
+                SceneObject.boundingEffect.World = Matrix.Identity;
+                SceneObject.boundingEffect.Techniques[0].Passes[0].Apply();
+                GraphicsDevice.BlendState = BlendState.AlphaBlend;
+                //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.LineList, tracer.points.ToArray(), 0, tracer.points.Count / 2);
+                GraphicsDevice.BlendState = BlendState.Opaque;
             }
+#endif
 
             // TODO: Add your drawing code here
 

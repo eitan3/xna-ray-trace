@@ -12,6 +12,7 @@ namespace RayTraceProject
 {
     class RayTracer
     {
+        const int MAX_REFLECTIONS = 6;
         const float RAY_INCREMENT = 0.1f;
         public Spatial.ISpatialManager CurrentScene { get; set; }
         public Camera CurrentCamera { get; set; }
@@ -20,7 +21,6 @@ namespace RayTraceProject
         public event EventHandler<AsyncCompletedEventArgs> RenderCompleted;
         public event EventHandler<ProgressChangedEventArgs> RenderProgressChanged;
         private RenderThreadContext[] contexts;
-        private int viewportHeight;
 
         private class RenderThreadContext
         {
@@ -39,6 +39,12 @@ namespace RayTraceProject
         {
             get;
             private set;
+        }
+
+        public Material.TextureFiltering TextureFiltering
+        {
+            get;
+            set;
         }
 
         public float Progress
@@ -107,7 +113,7 @@ namespace RayTraceProject
         {
             this.data = new Color[this.CurrentTarget.Width * this.CurrentTarget.Height];
 
-            int numberOfThreads = this.GetNumberOfThreads();
+            int numberOfThreads = 1; // this.GetNumberOfThreads();
             System.Threading.Thread[] threads = new System.Threading.Thread[numberOfThreads];
 
             for (int i = 0; i < numberOfThreads; i++)
@@ -150,6 +156,10 @@ namespace RayTraceProject
 
                     for (int x = 0; x < viewportRectangle.Width; x++)
                     {
+                        if (scanline == 300 && x == 400)
+                        {
+                            int sd = 5;
+                        }
                         screenSpaceCoord.X = x;
                         screenSpaceCoord.Y = scanline;
                         screenSpaceCoord.Z = 0;
@@ -161,7 +171,7 @@ namespace RayTraceProject
                         Vector3.Normalize(ref ray.Direction, out ray.Direction);
 
                         Color color;
-                        this.CastRay(ref ray, out color, 1, null);
+                        this.CastRay(ray, out color, 1, null);
                         data[((scanline) * viewportRectangle.Width) + x] = color;  
                     }
                 }
@@ -245,7 +255,7 @@ namespace RayTraceProject
                     Vector3.Normalize(ref ray.Direction, out ray.Direction);
                     
                     Color color;
-                    this.CastRay(ref ray, out color, 1, null);
+                    this.CastRay(ray, out color, 1, null);
                     textureData[((y - rect.Y) * rect.Width) + (x - rect.X)] = color;  
                 }
 
@@ -319,48 +329,62 @@ namespace RayTraceProject
                     a.t * b,
                     a.q * b);
             }
+
+            public override string ToString()
+            {
+                return string.Format("X:{0} Y:{1} Z:{2} W:{3} S:{4} T:{5} Q:{6}",
+                    this.x, this.y, this.z, this.w, this.s, this.t, this.q);
+            }
         }
 
-        static float maxU = float.MinValue;
-        static float maxV = float.MinValue;
-        public void CastRay(ref Ray ray, out Color result, int iteration, Triangle origin)
+        public List<VertexPositionColor> points = new List<VertexPositionColor>();
+        public void CastRay(Ray ray, out Color result, int iteration, Triangle origin)
         {
             result = Color.White;
-
+            
             Triangle triangle;
             float? u, v;
-            if (CurrentScene.GetRayIntersection(ref ray, out triangle, out u, out v, origin))
+            Vector3? intersectionPosition;
+            if (CurrentScene.GetRayIntersection(ray, out triangle, out u, out v, out intersectionPosition, origin))
             {
-                if (iteration < 8)
+                Vector3 n1 = triangle.n2 - triangle.n1;
+                Vector3 n2 = triangle.n3 - triangle.n1;
+                Vector3 interpolatedNormal = triangle.n1 + (n1 * u.Value) + (n2 * v.Value);
+                interpolatedNormal.Normalize();
+
+
+                Vector3 lightDir = new Vector3(1, 1, 0);
+                lightDir.Normalize();
+
+                float lightIntensity = Vector3.Dot(lightDir, interpolatedNormal);
+                if (lightIntensity < 0.4f)
+                    lightIntensity = 0.4f;
+
+
+                // This position interpolation is just here for debug purposes. It should really only be performed if the ray should reflect.
+
+
+                //addRayPoints(ray.Position, interpolatedPosition);
+
+                if (iteration < MAX_REFLECTIONS)
                 {
-                    if (u > maxU)
-                        maxU = u.Value;
-                    if (v > maxV)
-                        maxV = v.Value;
-                    Vector3 n1 = triangle.n2 - triangle.n1;
-                    Vector3 n2 = triangle.n3 - triangle.n1;
-                    Vector3 interpolatedNormal = triangle.n1 + (n1 * u.Value) + (n2 * v.Value);
-                    interpolatedNormal.Normalize();
+                    // GetRayIntersection does this work for us now.
+                    //Vector3 p1 = triangle.v2 - triangle.v1;
+                    //Vector3 p2 = triangle.v3 - triangle.v1;
+                    //Vector3 interpolatedPosition = triangle.v1 + (p1 * u.Value) + (p2 * v.Value);
 
-                    Vector3 p1 = triangle.v2 - triangle.v1;
-                    Vector3 p2 = triangle.v3 - triangle.v1;
-                    Vector3 interpolatedPosition = triangle.v1 + (p1 * u.Value) + (p2 * v.Value);
-
-
-
-                    Vector3.Reflect(ref ray.Direction, ref interpolatedNormal, out ray.Direction);
+                    //addRayPoints(ray.Position, intersectionPosition.Value);
+                    //addRayPoints(intersectionPosition.Value, intersectionPosition.Value + interpolatedNormal);
+                    ray.Position = intersectionPosition.Value;
+                    ray.Direction = Vector3.Reflect(ray.Direction, interpolatedNormal);
                     ray.Direction.Normalize();
-                    ray.Position = interpolatedPosition;
+                    //System.Diagnostics.Debug.WriteLine("Dot: {0}", Vector3.Dot(ray.Direction, interpolatedNormal));
+                    
+                    
+                    //addRayPoints(ray.Position, ray.Position + ray.Direction * 100);
 
                     Color reflectionColor;
-                    this.CastRay(ref ray, out reflectionColor, iteration + 1, triangle);
-
-                    Vector3 lightDir = new Vector3(1, 1, 0);
-                    lightDir.Normalize();
-
-                    float lightIntensity = Vector3.Dot(lightDir, interpolatedNormal);
-                    if (lightIntensity < 0.1f)
-                        lightIntensity = 0.1f;
+                    this.CastRay(ray, out reflectionColor, iteration + 1, triangle);
 
                     Material material = triangle.material;
                     Vector3 surfaceColor;
@@ -370,41 +394,11 @@ namespace RayTraceProject
 #else
                     if (material.UseTexture)
                     {
-                        Matrix worldViewProj = Matrix.Identity *CurrentCamera.View * CurrentCamera.Projection;
+                        Vector2 uv1 = (triangle.uv2) - (triangle.uv1);
+                        Vector2 uv2 = (triangle.uv3) - (triangle.uv1);
+                        Vector2 interpolatedUV = (triangle.uv1) + (uv1 * u.Value) + (uv2 * v.Value);
 
-                        Vector4 pt1 = Vector4.Transform(triangle.v1, worldViewProj);
-                        Vector4 pt2 = Vector4.Transform(triangle.v2, worldViewProj);
-                        Vector4 pt3 = Vector4.Transform(triangle.v3, worldViewProj);
-
-                        Vector7 mega1 = new Vector7(pt1.X, pt1.Y, pt1.Z, pt1.W, triangle.uv1.X, triangle.uv1.Y, 1);
-                        Vector7 mega2 = new Vector7(pt2.X, pt2.Y, pt2.Z, pt2.W, triangle.uv2.X, triangle.uv2.Y, 1);
-                        Vector7 mega3 = new Vector7(pt3.X, pt3.Y, pt3.Z, pt3.W, triangle.uv3.X, triangle.uv3.Y, 1);
-
-                        mega1 /= pt1.W;
-                        mega2 /= pt2.W;
-                        mega3 /= pt3.W;
-
-                        Vector7 megaEdge1 = mega2 - mega1;
-                        Vector7 megaEdge2 = mega3 - mega1;
-                        Vector7 interpolatedMega = mega1 + (megaEdge1 * (v.Value / 0.528f)) + (megaEdge2 * (u.Value / 0.528f));
-
-                        Vector2 interpolatedUV = new Vector2(interpolatedMega.s / interpolatedMega.q, interpolatedMega.t / interpolatedMega.q);
-
-                        //pt1 = pt1 / pt1.W;
-                        //pt2 = pt2 / pt2.W;
-                        //pt3 = pt3 / pt3.W;
-
-                        //float w1 = (1/pt2.W) - (1/pt1.W);
-                        //float w2 = (1 / pt3.W) - (1 / pt1.W);
-                        //float interpolatedW = (1/pt1.W) + (w1 * u.Value) + (w2 * v.Value);
-
-                        //Vector2 uv1 = (triangle.uv2 / pt2.W) - (triangle.uv1 / pt1.W);
-                        //Vector2 uv2 = (triangle.uv3 / pt3.W) - (triangle.uv1 / pt1.W);
-                        //Vector2 interpolatedUV = (triangle.uv1 / pt1.W) + (uv1 * u.Value) + (uv2 * v.Value);
-
-                       // interpolatedUV = interpolatedUV * (1.0f / (interpolatedW));
-
-                        material.LookupUV(interpolatedUV, out surfaceColor);
+                        material.LookupUV(interpolatedUV, this.TextureFiltering, out surfaceColor);
                     }
                     else
                     {
@@ -412,63 +406,18 @@ namespace RayTraceProject
                     }
                     result = new Color(Vector3.Lerp(reflectionColor.ToVector3(), (surfaceColor * lightIntensity), 1.0f - material.Reflectiveness));
 #endif
-
-
-
                 }
                 else
                 {
-                    Vector3 n1 = triangle.n2 - triangle.n1;
-                    Vector3 n2 = triangle.n3 - triangle.n1;
-                    Vector3 interpolatedNormal = triangle.n1 + (n1 * u.Value) + (n2 * v.Value);
-                    interpolatedNormal.Normalize();
-
-                    Vector3 lightDir = new Vector3(1, 1, 0);
-                    lightDir.Normalize();
-
-                    float lightIntensity = Vector3.Dot(lightDir, interpolatedNormal);
-                    if (lightIntensity < 0f)
-                        lightIntensity = 0f;
-
                     Material material = triangle.material;
                     Vector3 surfaceColor;
                     if (material.UseTexture)
                     {
-                        Matrix worldViewProj = Matrix.CreateScale(5, 1, 1) * Matrix.CreateTranslation(0, 10, 0) * CurrentCamera.View * CurrentCamera.Projection;
+                        Vector2 uv1 = (triangle.uv2) - (triangle.uv1);
+                        Vector2 uv2 = (triangle.uv3) - (triangle.uv1);
+                        Vector2 interpolatedUV = (triangle.uv1) + (uv1 * u.Value) + (uv2 * v.Value);
 
-                        Vector4 pt1 = Vector4.Transform(triangle.v1, worldViewProj);
-                        Vector4 pt2 = Vector4.Transform(triangle.v2, worldViewProj);
-                        Vector4 pt3 = Vector4.Transform(triangle.v3, worldViewProj);
-
-                        Vector7 mega1 = new Vector7(pt1.X, pt1.Y, pt1.Z, pt1.W, triangle.uv1.X, triangle.uv1.Y, 1);
-                        Vector7 mega2 = new Vector7(pt2.X, pt2.Y, pt2.Z, pt2.W, triangle.uv2.X, triangle.uv2.Y, 1);
-                        Vector7 mega3 = new Vector7(pt3.X, pt3.Y, pt3.Z, pt3.W, triangle.uv3.X, triangle.uv3.Y, 1);
-
-                        mega1 /= pt1.W;
-                        mega2 /= pt2.W;
-                        mega3 /= pt3.W;
-
-                        Vector7 megaEdge1 = mega1 - mega2;
-                        Vector7 megaEdge2 = mega1 - mega3;
-                        Vector7 interpolatedMega = mega1 + (megaEdge1 * u.Value) + (megaEdge2 * v.Value);
-
-                        Vector2 interpolatedUV = new Vector2(interpolatedMega.s / interpolatedMega.q, interpolatedMega.t / interpolatedMega.q);
-
-                        //pt1 = pt1 / pt1.W;
-                        //pt2 = pt2 / pt2.W;
-                        //pt3 = pt3 / pt3.W;
-
-                        //float w1 = (1/pt2.W) - (1/pt1.W);
-                        //float w2 = (1 / pt3.W) - (1 / pt1.W);
-                        //float interpolatedW = (1/pt1.W) + (w1 * u.Value) + (w2 * v.Value);
-
-                        //Vector2 uv1 = (triangle.uv2 ) - (triangle.uv1 );
-                        //Vector2 uv2 = (triangle.uv3 ) - (triangle.uv1 );
-                        //Vector2 interpolatedUV = (triangle.uv1 ) + (uv1 * u.Value) + (uv2 * v.Value);
-
-                        // interpolatedUV = interpolatedUV * (1.0f / (interpolatedW));
-
-                        material.LookupUV(interpolatedUV, out surfaceColor);
+                        material.LookupUV(interpolatedUV, this.TextureFiltering, out surfaceColor);
                     }
                     else
                     {
@@ -486,12 +435,23 @@ namespace RayTraceProject
                 Vector3 lightDir = new Vector3(1, 1, 0);
                 lightDir.Normalize();
                 float lightIntensity = Vector3.Dot(ray.Direction, lightDir);
-                if (lightIntensity < 0f)
-                    lightIntensity = 0f;
+                if (lightIntensity < 0.4f)
+                    lightIntensity = 0.4f;
 
                 result = new Color(Vector3.One * lightIntensity);
+
+                //addRayPoints(ray.Position, ray.Position + (1000 * ray.Direction));
             }
             
+        }
+
+        private void addRayPoints(Vector3 p, Vector3 q)
+        {
+            lock (points)
+            {
+                points.Add(new VertexPositionColor(p, Color.White));
+                points.Add(new VertexPositionColor(q, Color.White));
+            }
         }
 
 

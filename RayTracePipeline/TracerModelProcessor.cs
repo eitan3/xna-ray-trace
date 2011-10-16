@@ -105,6 +105,7 @@ namespace RayTracePipeline
             {
                 //System.Diagnostics.Debugger.Launch();
                 Matrix absoluteTransform = mesh.AbsoluteTransform;
+                Matrix absoluteTransformInvertTranspose = Matrix.Transpose(Matrix.Invert(absoluteTransform));
                 foreach (GeometryContent geometry in mesh.Geometry)
                 {
                     VertexChannel texCoords = null;
@@ -117,20 +118,20 @@ namespace RayTracePipeline
                         throw new InvalidContentException("Model is built with UseTexure but does not contain any TextureCoordinates.");
                     }
 
+                    VertexChannel normals = null;
+                    if(geometry.Vertices.Channels.Contains(VertexChannelNames.Normal(0)))
+                    {
+                        normals = geometry.Vertices.Channels[VertexChannelNames.Normal(0)];
+                    }
+                    
                     VertexChannel colors = null;
                     if (geometry.Vertices.Channels.Contains(VertexChannelNames.Color(0)))
                     {
                         colors = geometry.Vertices.Channels[VertexChannelNames.Color(0)];
                     }
 
-                    VertexChannel normals = null;
-                    if(geometry.Vertices.Channels.Contains(VertexChannelNames.Normal(0)))
-                    {
-                        normals = geometry.Vertices.Channels[VertexChannelNames.Normal(0)];
-                    }
-
                     BasicMaterialContent basicMaterial = geometry.Material as BasicMaterialContent;
-                    Matrix normalTransform = Matrix.CreateRotationX(MathHelper.PiOver2) *Matrix.CreateRotationZ(MathHelper.Pi);
+                    //Matrix normalTransform = Matrix.CreateRotationX(MathHelper.PiOver2) *Matrix.CreateRotationZ(MathHelper.Pi);
                     int triangleIndex = 0;
                     for (int i = 0; i < geometry.Indices.Count; i += 3)
                     {
@@ -147,9 +148,17 @@ namespace RayTracePipeline
                         Vector3.Transform(ref v3, ref absoluteTransform, out v3);
 
                         // I have no idea why I have to do this. If I do not, the Z and Y components of all normals are "switched" around.
-                        Vector3.Transform(ref n1, ref normalTransform, out n1);
-                        Vector3.Transform(ref n2, ref normalTransform, out n2);
-                        Vector3.Transform(ref n3, ref normalTransform, out n3);
+                        //Vector3.Transform(ref n1, ref normalTransform, out n1);
+                        //Vector3.Transform(ref n2, ref normalTransform, out n2);
+                        //Vector3.Transform(ref n3, ref normalTransform, out n3);
+
+                        // I am suspecting that what I suspected above is wrong. I mustve confused myself with weird models.
+                        // It seems like the normals should be transformed by the absoluteTransfom;
+                        //---
+                        // SCRATCH THAT. The normals should be transformed by the transpose of the inverse of the absolute transform :D
+                        Vector3.Transform(ref n1, ref absoluteTransformInvertTranspose, out n1);
+                        Vector3.Transform(ref n2, ref absoluteTransformInvertTranspose, out n2);
+                        Vector3.Transform(ref n3, ref absoluteTransformInvertTranspose, out n3);
 
                         n1.Normalize();
                         n2.Normalize();
