@@ -8,6 +8,30 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace RayTraceProject.Spatial
 {
+    public struct IntersectionResult
+    {
+        public SceneObject sceneObject;
+        public Triangle triangle;
+        public float u, v, d;
+        public Vector3 worldPosition;
+
+        public IntersectionResult(
+            SceneObject sceneObject,
+            Triangle triangle,
+            float u,
+            float v,
+            float d,
+            Vector3 worldPosition)
+        {
+            this.sceneObject = sceneObject;
+            this.triangle = triangle;
+            this.u = u;
+            this.v = v;
+            this.d = d;
+            this.worldPosition = worldPosition;
+        }
+    }
+
     class OctreeSpatialManager : ISpatialManager
     {
         private class CubeNode
@@ -231,146 +255,7 @@ namespace RayTraceProject.Spatial
                 }
             }
         }
-
-        public uint GetCubeoidId(Vector3 point)
-        {
-            CubeNode node = FindLeaf(this.root, ref point);
-            if (node == null)
-                return uint.MaxValue;
-            else
-                return node.id;
-        }
-
-        public List<ISpatialBody> GetBodies(Ray ray)
-        {
-            List<ISpatialBody> bodies = new List<ISpatialBody>();
-            this.GetBodies(ray, this.root, bodies);
-
-            return bodies;
-        }
-
-        private void GetBodies(Ray ray, CubeNode node, List<ISpatialBody> bodies)
-        {
-
-        }
-
-
-        public List<ISpatialBody> GetContainedBodies(uint cubeoidId)
-        {
-            CubeNode node = this.GetCubeNodeById(cubeoidId, this.root);
-            return node.containingObjects;
-        }
-
-        public bool TranslateRayToScene(ref Ray ray)
-        {
-            float? result;
-            this.root.bounds.Intersects(ref ray, out result);
-            if (result.HasValue)
-            {
-                ray.Position += ray.Direction * (result.Value + 0.001f);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-
-        }
-
-        CubeNode GetCubeNodeById(uint id, CubeNode node)
-        {
-            if (node.id == id)
-            {
-                return node;
-            }
-            else if(node.children != null)
-            {
-                for (int i = 0; i < node.children.Length; i++)
-                {
-                    CubeNode result = GetCubeNodeById(id, node.children[i]);
-                    if (result != null)
-                        return result;
-                }
-                return null;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public List<ISpatialBody> GetPossibleIntersections(Vector3 point)
-        {
-            CubeNode node = FindLeaf(this.root, ref point);
-            return node.containingObjects;
-        }
-
-        CubeNode FindLeaf(CubeNode node, ref Vector3 point)
-        {
-            if (node.children == null)
-            {
-
-                if (node.bounds.Contains(point) != ContainmentType.Disjoint)
-                    return node;
-                else
-                    return null;
-            }
-
-            bool greaterX = point.X > (node.bounds.Min.X + node.bounds.Max.X) / 2f;
-            bool greaterY = point.Y > (node.bounds.Min.Y + node.bounds.Max.Y) / 2f;
-            bool greaterZ = point.Z > (node.bounds.Min.Z + node.bounds.Max.Z) / 2f;
-            if (greaterX)
-            {
-                if (greaterY)
-                {
-                    if (greaterZ)
-                    {
-                        return FindLeaf(node.children[7], ref point); // 7: Max X, Max Y, Max Z
-                    }
-                    else
-                    {
-                        return FindLeaf(node.children[6], ref point); // 6: Max X, Max Y, Min Z
-                    }
-                }
-                else
-                {
-                    if (greaterZ)
-                    {
-                        return FindLeaf(node.children[5], ref point); // 5: Max X, Min Y, Max Z
-                    }
-                    else
-                    {
-                        return FindLeaf(node.children[4], ref point); // 4: Max X, Min Y, Min Z
-                    }
-                }
-            }
-            else
-            {
-                if (greaterY)
-                {
-                    if (greaterZ)
-                    {
-                        return FindLeaf(node.children[3], ref point); // 3: Min X, Max Y, Max Z
-                    }
-                    else
-                    {
-                        return FindLeaf(node.children[2], ref point); // 2: Min X, Max Y, Min Z
-                    }
-                }
-                else
-                {
-                    if (greaterZ)
-                    {
-                        return FindLeaf(node.children[1], ref point); // 1: Min X, Min Y, Max Z
-                    }
-                    else
-                    {
-                        return FindLeaf(node.children[0], ref point); // 0: Min X, Min Y, Min Z
-                    }
-                }
-            }
-        }
-
+        
         public void Draw(Camera camera, ref Matrix view, ref Matrix proj, GraphicsDevice device, GameTime gameTime)
         {
             this.DrawNode(camera, ref view, ref proj, this.root, device, gameTime);
@@ -403,73 +288,9 @@ namespace RayTraceProject.Spatial
             }
         }
 
-        private class RayIntersectResult
+        public bool GetRayIntersection(ref Ray ray, out IntersectionResult? result, Triangle ignoreTriangle, SceneObject ignoreObject)
         {
-            public ISpatialBody body;
-            public float result;
-        }
-
-        public List<ISpatialBody> GetIntersectedBodies(ref Ray ray)
-        {
-            List<RayIntersectResult> bodies = new List<RayIntersectResult>();
-            
-            this.GetIntersectedBodies(ref ray, this.root, bodies);
-            if (bodies.Count == 0)
-                return null;
-
-            RayIntersectResult best = bodies.OrderBy(x => x.result).First();
-
-            return bodies.Where(x => x.body.BoundingBox.Intersects(best.body.BoundingBox)).OrderBy(x => x.result).Select(x => x.body).ToList();
-        }
-
-        private void GetIntersectedBodies(ref Ray ray, CubeNode currentNode, List<RayIntersectResult> bodies)
-        {
-            float? result;
-            currentNode.bounds.Intersects(ref ray, out result);
-            if(!result.HasValue)
-                return;
-            else
-            {
-                if (currentNode.children == null)
-                {
-                    for (int i = 0; i < currentNode.containingObjects.Count; i++)
-                    {
-                        Ray transformedRay;
-                        SceneObject obj = (SceneObject)currentNode.containingObjects[i];
-                        Matrix inverseWorld = obj.InverseWorld;
-
-                        Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
-                        Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
-                        ray.Direction.Normalize();
-
-                        float? objectResult;
-                        obj.BoundingBox.Intersects(ref ray, out objectResult);
-                        if (objectResult.HasValue)
-                            bodies.Add(new RayIntersectResult() { body = currentNode.containingObjects[i], result = objectResult.Value });
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < 8; i++)
-                    {
-                        this.GetIntersectedBodies(ref ray, currentNode.children[i], bodies);
-                    }
-                }
-            }
-        }
-
-        private class RayIntersectResultCube
-        {
-            public CubeNode cubeoid;
-            public float result;
-        }
-
-
-        public bool GetRayIntersection(Ray ray, out Triangle triangle, out float? u, out float? v, out Vector3? worldPosition, Triangle origin)
-        {
-            triangle = null;
-            u = v = 0;
-            worldPosition = Vector3.Zero;
+            result = null;
 
             SortedDictionary<float, CubeNode> cubeoids = new SortedDictionary<float, CubeNode>();
             this.GetRayCubeNodeIntersections(ref ray, this.root, cubeoids);
@@ -486,47 +307,53 @@ namespace RayTraceProject.Spatial
             Triangle intersectedTriangle = null;
             bool intersectionFound = false;
             SceneObject intersectedSceneObject = null;
+
+            Vector3 v1, v2, rayDirPosition;
             while (!intersectionFound && cubeoidIndex < intersectedCubeoids.Count)
             {
                 List<ISpatialBody> objects = intersectedCubeoids[cubeoidIndex++].containingObjects;
                 for (int i = 0; i < objects.Count; i++)
                 {
-                    SceneObject sceneObject = (SceneObject)objects[i];
-                    Matrix inverseWorld = sceneObject.InverseWorld;
-                    // -- While the below LOOKS like it should work, it does not. Correct solution below!
-                    //Ray transformedRay;
-                    //Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
-                    //Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
-                    //transformedRay.Direction.Normalize();
-
-                    Vector3 v1 = Vector3.Transform(ray.Position, inverseWorld);
-                    Vector3 v2 = Vector3.Transform(ray.Position + ray.Direction, inverseWorld);
-                    Ray transformedRay = new Ray(v1, v2 - v1);
-                    transformedRay.Direction.Normalize();
-
-                    if (sceneObject.RayIntersects(transformedRay))
+                    if (ignoreObject == null || ignoreObject != objects[i])
                     {
-                        List<Triangle> triangles = sceneObject.GetTriangles();
-                        for (int j = 0; j < triangles.Count; j++)
-                        {
-                            if (origin != null && origin.id == triangles[j].id)
-                            {
-                                int igf = 5;
-                            }
-                            else
-                            {
-                                float currentU, currentV, distance;
-                                if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) &&
-                                    distance < minDistance)
-                                {
-                                    minDistance = distance;
-                                    intersectionU = currentU;
-                                    intersectionV = currentV;
-                                    intersectedTriangle = triangles[j];
-                                    intersectedSceneObject = sceneObject;
+                        SceneObject sceneObject = (SceneObject)objects[i];
+                        Matrix inverseWorld = sceneObject.InverseWorld;
+                        // -- While the below LOOKS like it should work, it does not. Correct solution below!
+                        //Ray transformedRay;
+                        //Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
+                        //Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
+                        //transformedRay.Direction.Normalize();
 
-                                    // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
-                                    intersectionFound = true;
+                        //Vector3 v1 = Vector3.Transform(ray.Position, inverseWorld);
+                        //Vector3 v2 = Vector3.Transform(ray.Position + ray.Direction, inverseWorld);
+                        Vector3.Add(ref ray.Position, ref ray.Direction, out rayDirPosition);
+
+                        Vector3.Transform(ref ray.Position, ref inverseWorld, out v1);
+                        Vector3.Transform(ref rayDirPosition, ref inverseWorld, out v2);
+                        Vector3.Subtract(ref v2, ref v1, out rayDirPosition);
+                        Ray transformedRay = new Ray(v1, rayDirPosition);
+                        transformedRay.Direction.Normalize();
+
+                        if (sceneObject.RayIntersects(ref transformedRay))
+                        {
+                            List<Triangle> triangles = sceneObject.GetTriangles();
+                            for (int j = 0; j < triangles.Count; j++)
+                            {
+                                if (ignoreTriangle == null || ignoreTriangle != triangles[j])
+                                {
+                                    float currentU, currentV, distance;
+                                    if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) &&
+                                        distance < minDistance)
+                                    {
+                                        minDistance = distance;
+                                        intersectionU = currentU;
+                                        intersectionV = currentV;
+                                        intersectedTriangle = triangles[j];
+                                        intersectedSceneObject = sceneObject;
+
+                                        // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
+                                        intersectionFound = true;
+                                    }
                                 }
                             }
                         }
@@ -536,17 +363,19 @@ namespace RayTraceProject.Spatial
 
             if (intersectionFound)
             {
-                triangle = intersectedTriangle;
-                u = intersectionU;
-                v = intersectionV;
-
-                // Calculate world position of intersection.
-                Vector3 p1 = triangle.v2 - triangle.v1;
-                Vector3 p2 = triangle.v3 - triangle.v1;
-                Vector3 interpolatedPosition = triangle.v1 + (p1 * u.Value) + (p2 * v.Value);
+                Vector3 p1 = intersectedTriangle.v2 - intersectedTriangle.v1;
+                Vector3 p2 = intersectedTriangle.v3 - intersectedTriangle.v1;
+                Vector3 interpolatedPosition = intersectedTriangle.v1 + (p1 * intersectionU) + (p2 * intersectionV);
                 Matrix world = intersectedSceneObject.World;
                 Vector3.Transform(ref interpolatedPosition, ref world, out interpolatedPosition);
-                worldPosition = interpolatedPosition;
+
+                result = new IntersectionResult(
+                    intersectedSceneObject,
+                    intersectedTriangle,
+                    intersectionU,
+                    intersectionV,
+                    minDistance,
+                    interpolatedPosition);
             }
 
             return intersectionFound;

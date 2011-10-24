@@ -12,13 +12,6 @@ namespace RayTraceProject.Spatial
         List<ISpatialBody> Bodies { get; }
         void Build();
 
-        // Tveksamt om dessa metoder ska finnas i detta interface. Ignorerar det så länge.
-        List<ISpatialBody> GetPossibleIntersections(Vector3 point);
-        uint GetCubeoidId(Vector3 point);
-        List<ISpatialBody> GetContainedBodies(uint cubeoidId);
-        bool TranslateRayToScene(ref Ray ray);
-
-        List<ISpatialBody> GetIntersectedBodies(ref Ray ray);
-        bool GetRayIntersection(Ray ray, out Triangle triangle, out float? u, out float? v, out Vector3? worldPosition, Triangle origin);
+        bool GetRayIntersection(ref Ray ray, out IntersectionResult? result, Triangle ignoreTriangle, SceneObject ignoreObject);
     }
 }

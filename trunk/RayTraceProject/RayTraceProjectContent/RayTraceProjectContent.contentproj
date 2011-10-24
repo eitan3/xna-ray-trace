@@ -55,13 +55,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="plane.x">
-      <Name>Plane</Name>
-      <Importer>XImporter</Importer>
-      <Processor>ModelProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Android.FBX">
       <Name>Android</Name>
       <Importer>FbxImporter</Importer>
@@ -87,9 +80,7 @@
     <Compile Include="coffeepot.FBX">
       <Name>coffeepot</Name>
       <Importer>FbxImporter</Importer>
-      <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_DiffuseColor>255, 0, 0, 255</ProcessorParameters_DiffuseColor>
-      <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
+      <Processor>ModelProcessor</Processor>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -97,9 +88,9 @@
       <Name>Sphere</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_Scale>5</ProcessorParameters_Scale>
-      <ProcessorParameters_DiffuseColor>255, 255, 0, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_Scale>3</ProcessorParameters_Scale>
       <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
+      <ProcessorParameters_DiffuseColor>0, 0, 255, 255</ProcessorParameters_DiffuseColor>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -124,8 +115,63 @@
       <Processor>TracerModelProcessor</Processor>
       <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\checkers.bmp</ProcessorParameters_TextureFilePath>
       <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
-      <ProcessorParameters_Reflectiveness>0</ProcessorParameters_Reflectiveness>
       <ProcessorParameters_Scale>100</ProcessorParameters_Scale>
+      <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="monkey.fbx">
+      <Name>monkey</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>ModelProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="torus.fbx">
+      <Name>torus</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_DiffuseColor>0, 0, 255, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
+      <ProcessorParameters_Scale>2</ProcessorParameters_Scale>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="mat.fbx">
+      <Name>mat</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_Scale>4</ProcessorParameters_Scale>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Designtime\cone2.x">
+      <Name>cone</Name>
+      <Importer>XImporter</Importer>
+      <Processor>ModelProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Designtime\lightbulb.png">
+      <Name>lightbulb</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Designtime\sun.png">
+      <Name>sun</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="chesspiece.fbx">
+      <Name>chesspiece</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_RotationX>-90</ProcessorParameters_RotationX>
+      <ProcessorParameters_Scale>3</ProcessorParameters_Scale>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />
