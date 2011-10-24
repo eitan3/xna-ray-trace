@@ -5,10 +5,11 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RayTracerTypeLibrary;
+using System.ComponentModel;
 
 namespace RayTraceProject
 {
-    class SceneObject : Spatial.ISpatialBody
+    public class SceneObject : Spatial.ISpatialBody
     {
         List<Triangle> triangles;
         BoundingBox boundingBox;
@@ -114,8 +115,10 @@ namespace RayTraceProject
             material.Init();
             for (int i = 0; i < this.triangles.Count; i++)
             {
-                this.triangles[i].SetMaterial(material);
+                this.triangles[i].material = material;
             }
+
+            var foo = this.triangles.Where(x => x.convexGeometry);
 
 #if DEBUG
             if(SceneObject.boundingEffect == null)
@@ -189,6 +192,7 @@ namespace RayTraceProject
                 {
                     BasicEffect effect = this.model.Meshes[i].MeshParts[j].Effect as BasicEffect;
                     effect.EnableDefaultLighting();
+                    effect.PreferPerPixelLighting = true;
                     effect.World =  boneTransforms[this.model.Meshes[i].ParentBone.Index] * this.World;
                     effect.Projection = proj;
                     effect.View = view;
@@ -226,9 +230,11 @@ namespace RayTraceProject
             return this.triangles;
         }
 
-        public bool RayIntersects(Ray ray)
+        public bool RayIntersects(ref Ray ray)
         {
-            return this.BoundingBox.Intersects(ray).HasValue;
+            float? distance;
+            BoundingBox.Intersects(ref ray, out distance);
+            return distance.HasValue;
         }
 
         public bool GetIntersectingFaceNormal(Ray ray, out Vector3 normal, out float? distance)

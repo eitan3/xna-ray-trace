@@ -17,14 +17,10 @@ namespace RayTracerTypeLibrary
         public Vector3 v1, v2, v3;
         public Vector2 uv1, uv2, uv3;
         public Vector3 n1, n2, n3;
+        public int i1, i2, i3;
         public Vector3 surfaceNormal;
+        public bool convexGeometry;
         public Vector3 color;
-        public bool useTexture;
-        public string texturePath;
         public Material material;
-        public void SetMaterial(Material m)
-        {
-            this.material = m;
-        }
     }
 }

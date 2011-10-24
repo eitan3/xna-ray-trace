@@ -23,6 +23,6 @@ namespace RayTraceProject.Spatial
 
         List<Triangle> GetTriangles();
 
-        bool RayIntersects(Ray ray);
+        bool RayIntersects(ref Ray ray);
     }
 }
