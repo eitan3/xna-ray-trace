@@ -52,7 +52,7 @@ namespace RayTraceProject
             if (lightDot > this.angleCosine)
             {
                 float spotIntensity = this.Intensity * (float)((lightDot - this.angleCosine) / Math.Pow((1 - this.angleCosine), this.DecayExponent));
-                return this.Color * spotIntensity * surfaceDot;
+                return this.Color * spotIntensity * surfaceDot + (Vector3.One * (float)Math.Pow(surfaceDot, 12));
             }
             else
             {

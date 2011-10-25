@@ -43,8 +43,8 @@ namespace RayTraceProject
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
-            graphics.PreferredBackBufferWidth = 1024;
-            graphics.PreferredBackBufferHeight = 768;
+            graphics.PreferredBackBufferWidth = 1920;
+            graphics.PreferredBackBufferHeight = 1080;
             Content.RootDirectory = "Content";
             this.IsMouseVisible = true;
         }
@@ -101,6 +101,8 @@ namespace RayTraceProject
             Model torusModel = Content.Load<Model>("torus");
             Model matModel = Content.Load<Model>("mat");
             Model chessModel = Content.Load<Model>("chesspiece");
+            Model wossyModel = Content.Load<Model>("wossy");
+
             plane = new SceneObject(GraphicsDevice, planeModel, Vector3.Zero, Vector3.Zero);
             plane.Name = "Ground";
 
@@ -137,47 +139,57 @@ namespace RayTraceProject
             //scene.Bodies.Add(cube); 
             //scene.Bodies.Add(sphere);
 
-            SceneObject mat = new SceneObject(GraphicsDevice, matModel, new Vector3(-20, 2, 0), Vector3.Zero);
+            SceneObject mat = new SceneObject(GraphicsDevice, matModel, new Vector3(-20, 0, 0), Vector3.Zero);
             mat.Name = "Mat";
             //scene.Bodies.Add(mat);
 
-            for (int i = 0; i < 5; i++ )
-            {
-                SceneObject chess = new SceneObject(GraphicsDevice, chessModel, new Vector3((float)Math.Sin((i / 5.0f)  * MathHelper.TwoPi) * 7, 0, (float)Math.Cos((i / 5.0f)  * MathHelper.TwoPi) * 7), Vector3.Zero);
-                chess.Name = string.Format("Chess piece {0}", i);
-                scene.Bodies.Add(chess);
-            }
+            SceneObject wossy = new SceneObject(GraphicsDevice, wossyModel, new Vector3(40, 0, 0), Vector3.Zero);
+            mat.Name = "Wossy";
+            scene.Bodies.Add(wossy);
 
             scene.Bodies.Add(plane);
 
 
             this.scene.Build();
 
-            this.camera = new Camera(new Vector3(0, 5, -40), new Vector3(0, 0, 0), Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            //this.camera = new Camera(new Vector3(22, 27, 58), new Vector3(0, 0, 0), Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            this.camera = new Camera(new Vector3(43, 11, -60), new Vector3(0, 0, 0), Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
-            tracer.TextureFiltering = TextureFiltering.Bilinear;
+            tracer.TextureFiltering = TextureFiltering.Point;
             tracer.AddressMode = UVAddressMode.Wrap;
             tracer.CurrentCamera = this.camera;
             tracer.CurrentScene = this.scene;
             tracer.CurrentTarget = rayTraceTarget;
             tracer.GraphicsDevice = GraphicsDevice;
-            tracer.MaxReflections = 1;
+            tracer.MaxReflections = 3;
+            tracer.UseMultisampling = true;
+            tracer.MultisampleQuality = 1;
             tracer.RenderCompleted += new EventHandler<System.ComponentModel.AsyncCompletedEventArgs>(tracer_RenderCompleted);
 
 
-                SpotLight light = new SpotLight();
-                light.Color = Vector3.One;
-                light.Position = new Vector3(0, 400, 0);
-                light.Direction = Vector3.Normalize(new Vector3(2, -10, 0));
-                light.SpotAngle = MathHelper.PiOver4;
-                light.Intensity = 1.0f;
-                tracer.Lights.Add(light);
+            SpotLight light = new SpotLight();
+            light.Color = Vector3.One;
+            light.Position = new Vector3(20, 70, -120);
+            light.Direction = -Vector3.Normalize(light.Position);
+            light.SpotAngle = MathHelper.PiOver2;
+            light.Intensity = 1.0f;
+            tracer.Lights.Add(light);
+
+            light = new SpotLight();
+            light.Color = Vector3.One;
+            light.Position = new Vector3(-20, 70, -120);
+            light.Direction = -Vector3.Normalize(light.Position);
+            light.SpotAngle = MathHelper.PiOver2;
+            light.Intensity = 2.0f;
+            tracer.Lights.Add(light);
 
 
             // TODO: use this.Content to load your game content here
         }
+
+        SceneObject[] spheres = new SceneObject[5];
 
         bool finished = false;
         bool videocompiled = false;
@@ -199,12 +211,11 @@ namespace RayTraceProject
             }
 
             rot += rot_step;
+            camera.Position = Vector3.Lerp(new Vector3(43, 11, -60), new Vector3(43, 11, 60), rot / MathHelper.TwoPi);
             if(rot >= MathHelper.TwoPi)
             {
                 finished = true;
             }
-
-            //camera.Position = new Vector3((float)Math.Sin(rot) * 60, 4, (float)Math.Cos(rot) * 60);
 
             //if (frame == maxI)
             //{
@@ -220,7 +231,7 @@ namespace RayTraceProject
 
             System.Drawing.Bitmap firstBitmap = (System.Drawing.Bitmap)System.Drawing.Bitmap.FromFile(System.IO.Path.Combine(this.folder, string.Format("image{0}.png", 0)));
 
-            VideoStream aviStream = aviManager.AddVideoStream(true, 30, firstBitmap);
+            VideoStream aviStream = aviManager.AddVideoStream(false, 30, firstBitmap);
 
             System.Drawing.Bitmap bitmap;
             for (int i = 1; i < frame; i++)
@@ -343,22 +354,22 @@ namespace RayTraceProject
             else
             {
                 onScreenText = string.Format("Camera: {0}", camera.Position);
-                if (nextframe)
-                {
-                    //nextframe = false;
-                    //rayTraceWatch = Stopwatch.StartNew();
-                    //for (int i = 0; i < smallSpheres.Length; i++)
-                    //{
-                    //    smallSpheres[i].Position = new Vector3((float)Math.Sin(rot + (i * rot_space)) * 10, 8, (float)Math.Cos(rot + (i * rot_space)) * 10);
-                    //}
-                    //this.tracer.RenderAsyncV2();
-                }
-                if(finished && !videocompiled)
-                {
-                    //this.videocompiled = true;
-                    //this.compileVideo();
+                //if (nextframe)
+                //{
+                //    nextframe = false;
+                //    rayTraceWatch = Stopwatch.StartNew();
+                //    for (int i = 0; i < spheres.Length; i++)
+                //    {
+                //        spheres[i].Position = new Vector3((float)Math.Sin(rot + (i * rot_space)) * 10, 3, (float)Math.Cos(rot + (i * rot_space)) * 10);
+                //    }
+                //    //this.tracer.RenderAsync();
+                //}
+                //if(finished && !videocompiled)
+                //{
+                //    this.videocompiled = true;
+                //    this.compileVideo();
 
-                }
+                //}
             }
 
             lastState = state;

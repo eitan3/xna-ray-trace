@@ -113,7 +113,7 @@
       <Name>ground</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\checkers.bmp</ProcessorParameters_TextureFilePath>
+      <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\wossy.jpg</ProcessorParameters_TextureFilePath>
       <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
       <ProcessorParameters_Scale>100</ProcessorParameters_Scale>
       <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
@@ -172,6 +172,17 @@
       <ProcessorParameters_RotationX>-90</ProcessorParameters_RotationX>
       <ProcessorParameters_Scale>3</ProcessorParameters_Scale>
       <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="wossy.fbx">
+      <Name>wossy</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_Scale>32</ProcessorParameters_Scale>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_RotationY>180</ProcessorParameters_RotationY>
+      <ProcessorParameters_Reflectiveness>0.6</ProcessorParameters_Reflectiveness>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />
