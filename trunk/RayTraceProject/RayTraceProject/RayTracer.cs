@@ -115,7 +115,7 @@ namespace RayTraceProject
 
         private void RenderInternalWithMultisampling()
         {
-            this.renderTargetData = new Color[(this.CurrentTarget.Width + 1) * (this.CurrentTarget.Height + 1)];
+            this.renderTargetData = new Color[(this.CurrentTarget.Width) * (this.CurrentTarget.Height)];
 
             int numberOfThreads = this.GetNumberOfThreads();
             System.Threading.Thread[] threads = new System.Threading.Thread[numberOfThreads];
@@ -172,7 +172,7 @@ namespace RayTraceProject
                 // This is very similar to the standard render-routine, apart from that we go one extra scanline AND
                 // one extra "increment" on the width.
 
-                if (scanline > viewportRectangle.Height)
+                if (scanline >= viewportRectangle.Height)
                 {
                     finished = true;
                 }
@@ -180,7 +180,7 @@ namespace RayTraceProject
                 {
                     Vector3 screenSpaceCoord;
 
-                    for (int x = 0; x <= viewportRectangle.Width; x++)
+                    for (int x = 0; x < viewportRectangle.Width; x++)
                     {
                         Color result;
                         GetColorForQuadrant(x, scanline, 1.0f, 0, out result);
