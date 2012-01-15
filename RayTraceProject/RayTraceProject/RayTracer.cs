@@ -538,7 +538,8 @@ namespace RayTraceProject
                     //if(reflectionColor == Color.Black)
                     //    resultColor = new Color(surfaceColor * lightResult);
                     //else
-                        resultColor = new Color(Vector3.Lerp(reflectionColor.ToVector3(), (surfaceColor * lightResult), 1.0f - material.Reflectiveness));
+                    Vector3 colorVector = Vector3.Lerp(reflectionColor.ToVector3(), surfaceColor, 1.0f - material.Reflectiveness) * lightResult;
+                    resultColor = new Color(colorVector);
 #endif
                 }
                 else
