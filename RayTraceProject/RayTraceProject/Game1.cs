@@ -43,9 +43,12 @@ namespace RayTraceProject
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
-            graphics.PreferredBackBufferWidth = 1920;
-            graphics.PreferredBackBufferHeight = 1080;
+            graphics.PreferredBackBufferWidth = 1024;
+            graphics.PreferredBackBufferHeight = 1024;
             Content.RootDirectory = "Content";
+            Vector3 v1 = new Vector3(0, 0, 1);
+            Vector3 v2 = new Vector3(-0.0076134061f, -0.22078878f, -0.97529179f);
+            float dot = Vector3.Dot(v1, v2);
             this.IsMouseVisible = true;
         }
 
@@ -96,29 +99,38 @@ namespace RayTraceProject
             Model coffeeModel = Content.Load<Model>("coffeepot");
             Model sphereModel = Content.Load<Model>("Sphere");
             Model crateModel = Content.Load<Model>("Crate_Fragile");
-            Model cubeModel = Content.Load<Model>("cube");
+            //Model cubeModel = Content.Load<Model>("cube");
             Model monkeyModel = Content.Load<Model>("monkey");
             Model torusModel = Content.Load<Model>("torus");
             Model matModel = Content.Load<Model>("mat");
             Model chessModel = Content.Load<Model>("chesspiece");
             Model wossyModel = Content.Load<Model>("wossy");
+            Model mehModel = Content.Load<Model>("meh");
+           // Model chessboardModel = Content.Load<Model>("chessboard");
+
+            
+            
 
             plane = new SceneObject(GraphicsDevice, planeModel, Vector3.Zero, Vector3.Zero);
             plane.Name = "Ground";
 
+
+
             //android = new SceneObject(androidModel, new Vector3(0, 8, 0), Vector3.Zero);
             //android.Rotation = new Vector3(0, -MathHelper.PiOver2, 0);
 
-            this.folder = System.IO.Path.Combine(@"D:\Videos", string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss"))); //System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
+            //System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
+            this.folder = System.IO.Path.Combine(@"D:\Videos", string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
+
             if (!System.IO.Directory.Exists(folder))
             {
                 System.IO.Directory.CreateDirectory(this.folder);
             }
+
             //crate = new SceneObject(GraphicsDevice, coffeeModel, new Vector3(0, 9, 0), Vector3.Zero);
 
 
-            SceneObject sphere = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 2, 0), Vector3.Zero);
-            sphere.Name = "Sphere";
+
 
 
 
@@ -130,30 +142,87 @@ namespace RayTraceProject
             
 
             this.scene = new Spatial.OctreeSpatialManager();
-            
+
+            //SceneObject chessboard = new SceneObject(GraphicsDevice, chessboardModel, Vector3.Zero, Vector3.Zero);
+           // chessboard.Name = "Chess";
+            //this.scene.Bodies.Add(chessboard);
+
             //scene.Bodies.Add(crate);
             //SceneObject monkey = new SceneObject(GraphicsDevice, monkeyModel, new Vector3(0, 6, 0), Vector3.Zero);
             //scene.Bodies.Add(monkey);
             //SceneObject torus = new SceneObject(GraphicsDevice, torusModel, new Vector3(0, 4, 0), Vector3.Zero);
             //scene.Bodies.Add(torus);
             //scene.Bodies.Add(cube); 
+            //for (int i = 0; i < 0; i++)
+            //{
+            //    for (int j = 0; j < 0; j++)
+            //    {
+            //        SceneObject sphere = new SceneObject(GraphicsDevice, sphereModel, new Vector3(30, 8, -40), Vector3.Zero);
+            //        sphere.Name = "Sphere";
+            //        sphere.Position = new Vector3(30 - (8 * i), 8, -40 + (8 * j));
+            //        scene.Bodies.Add(sphere);
+            //    }
+            //}
+            SceneObject sphere = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 0, 0), new Vector3(0, 0, 1.57f));
+            sphere.Scale = Vector3.One;
+            sphere.Name = "Sphere";
+            sphere.Position = new Vector3(0, 0, 0);
             //scene.Bodies.Add(sphere);
+            sphereRow1[0] = sphere;
+            //spheres[0].Position = new Vector3((float)Math.Sin(rot) * 17, 8 + ((float)Math.Cos(rot) * 17), 10);
+            SceneObject sphere2 = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 0, 0), Vector3.Zero);
+            sphere2.Name = "Sphere 1";
+            sphere2.Position = new Vector3(50, 2, 50);
+            scene.Bodies.Add(sphere);
+
+
+            sphere2 = new SceneObject(GraphicsDevice, sphereModel, new Vector3(-50, 2, -50), Vector3.Zero);
+            sphere2.Name = "Sphere ABC";
+            //scene.Bodies.Add(sphere2);
+
+            sphere2 = new SceneObject(GraphicsDevice, sphereModel, new Vector3(50, 2, -50), Vector3.Zero);
+            sphere2.Name = "Sphere 3";
+            //scene.Bodies.Add(sphere2);
+
+            sphere2 = new SceneObject(GraphicsDevice, sphereModel, new Vector3(-50, 2, 50), Vector3.Zero);
+            sphere2.Name = "Sphere 4";
+            //scene.Bodies.Add(sphere2);
+
+
 
             SceneObject mat = new SceneObject(GraphicsDevice, matModel, new Vector3(-20, 0, 0), Vector3.Zero);
             mat.Name = "Mat";
             //scene.Bodies.Add(mat);
 
-            SceneObject wossy = new SceneObject(GraphicsDevice, wossyModel, new Vector3(40, 0, 0), Vector3.Zero);
+            SceneObject wossy = new SceneObject(GraphicsDevice, monkeyModel, new Vector3(0, 21, 0), Vector3.Zero);
             mat.Name = "Wossy";
-            scene.Bodies.Add(wossy);
+            //scene.Bodies.Add(wossy);
 
-            scene.Bodies.Add(plane);
+            //for (int i = 0; i < 5; i++)
+            //{
+            //    sphereRow1[i] = new SceneObject(GraphicsDevice, sphereModel, new Vector3((float)Math.Sin(rot + (i * rot_spaceRow1)) * 8, 1, (float)Math.Cos(rot + (i * rot_spaceRow1)) * 8), Vector3.Zero);
+            //    scene.Bodies.Add(sphereRow1[i]);
+            //}
+
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    sphereRow2[i] = new SceneObject(GraphicsDevice, sphereModel, new Vector3((float)Math.Sin(rot + (i * rot_spaceRow2)) * 5, 4, (float)Math.Cos(rot + (i * rot_spaceRow2)) * 5), Vector3.Zero);
+            //    scene.Bodies.Add(sphereRow2[i]);
+            //}
+
+            //scene.Bodies.Add(plane);
+
+            
+
+            meh = new SceneObject(GraphicsDevice, mehModel, new Vector3(-10, 11.79993f, 0), Vector3.Zero);
+            meh.Name = "meh";
+            //scene.Bodies.Add(meh);
 
 
             this.scene.Build();
 
             //this.camera = new Camera(new Vector3(22, 27, 58), new Vector3(0, 0, 0), Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            this.camera = new Camera(new Vector3(43, 11, -60), new Vector3(0, 0, 0), Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
+            this.camera = new Camera(new Vector3(0, 0, 5), new Vector3(0, 0, 0), Vector3.Up, 1.57f, GraphicsDevice.Viewport.AspectRatio, 1.0f, 1000.0f);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
@@ -163,41 +232,47 @@ namespace RayTraceProject
             tracer.CurrentScene = this.scene;
             tracer.CurrentTarget = rayTraceTarget;
             tracer.GraphicsDevice = GraphicsDevice;
-            tracer.MaxReflections = 3;
-            tracer.UseMultisampling = true;
+            tracer.MaxReflections = 2;
+            tracer.UseMultisampling = false;
             tracer.MultisampleQuality = 1;
             tracer.RenderCompleted += new EventHandler<System.ComponentModel.AsyncCompletedEventArgs>(tracer_RenderCompleted);
 
 
-            SpotLight light = new SpotLight();
-            light.Color = Vector3.One;
-            light.Position = new Vector3(20, 70, -120);
-            light.Direction = -Vector3.Normalize(light.Position);
-            light.SpotAngle = MathHelper.PiOver2;
-            light.Intensity = 1.0f;
-            tracer.Lights.Add(light);
+            //light = new SpotLight();
+            //light.Color = Vector3.One;
+            //light.Position = (new Vector3(-90, 90, 0));
+            //light.Direction = new Vector3((float)Math.Sin(rot), -(float)Math.Cos(rot), 0);
+            //light.SpotAngle = MathHelper.PiOver2;
+            //light.Intensity = 3.0f;
+            //tracer.Lights.Add(light);
 
-            light = new SpotLight();
-            light.Color = Vector3.One;
-            light.Position = new Vector3(-20, 70, -120);
-            light.Direction = -Vector3.Normalize(light.Position);
-            light.SpotAngle = MathHelper.PiOver2;
-            light.Intensity = 2.0f;
-            tracer.Lights.Add(light);
+            //light = new SpotLight();
+            //light.Color = Vector3.One;
+            //light.Position = new Vector3(0, 20, 50);
+            //light.Direction = -Vector3.Normalize(light.Position);
+            //light.SpotAngle = MathHelper.PiOver2;
+            //light.Intensity = 1.0f;
+            //tracer.Lights.Add(light);
 
+            Matrix proj = camera.Projection;
+            Matrix view = camera.View;
+            Matrix viewproj = view * proj;
+            viewproj = Matrix.Invert(viewproj);
 
             // TODO: use this.Content to load your game content here
         }
-
-        SceneObject[] spheres = new SceneObject[5];
-
+        SpotLight light;
+        SceneObject[] sphereRow1 = new SceneObject[5];
+        SceneObject[] sphereRow2 = new SceneObject[4];
+        SceneObject meh;
         bool finished = false;
         bool videocompiled = false;
         bool nextframe = true;
         int frame = 0;
         
         float rot_step = MathHelper.TwoPi / 360.0f;
-        float rot_space = MathHelper.TwoPi / 5.0f;
+        float rot_spaceRow1 = MathHelper.TwoPi / 5.0f;
+        float rot_spaceRow2 = MathHelper.TwoPi / 4.0f;
         float rot = 0;
         void tracer_RenderCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
@@ -211,11 +286,25 @@ namespace RayTraceProject
             }
 
             rot += rot_step;
-            camera.Position = Vector3.Lerp(new Vector3(43, 11, -60), new Vector3(43, 11, 60), rot / MathHelper.TwoPi);
-            if(rot >= MathHelper.TwoPi)
+            light.Direction = new Vector3((float)Math.Sin(rot), -(float)Math.Cos(rot), 0);
+            if (rot >= MathHelper.TwoPi)
             {
                 finished = true;
             }
+            //for (int i = 0; i < 5; i++)
+            //{
+            //    sphereRow1[i].Position = new Vector3((float)Math.Sin(rot + (i * rot_spaceRow1)) * 8, 1, (float)Math.Cos(rot + (i * rot_spaceRow1)) * 8);
+            //}
+
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    sphereRow2[i].Position = new Vector3((float)Math.Sin((rot*2) + (i * rot_spaceRow2)) * 5, 4, (float)Math.Cos((rot*2) + (i * rot_spaceRow2)) * 5);
+            //}
+            if (rot >= MathHelper.TwoPi)
+            {
+                finished = true;
+            }
+
 
             //if (frame == maxI)
             //{
@@ -227,14 +316,15 @@ namespace RayTraceProject
 
         private void compileVideo()
         {
-            AviManager aviManager = new AviManager(System.IO.Path.Combine(this.folder, "Video.avi"), false);
+            AviManager aviManager = new AviManager(System.IO.Path.Combine(this.folder, "VideoCompressed.avi"), false);
 
             System.Drawing.Bitmap firstBitmap = (System.Drawing.Bitmap)System.Drawing.Bitmap.FromFile(System.IO.Path.Combine(this.folder, string.Format("image{0}.png", 0)));
 
-            VideoStream aviStream = aviManager.AddVideoStream(false, 30, firstBitmap);
+            VideoStream aviStream = aviManager.AddVideoStream(true, 30, firstBitmap);
+            //VideoStream aviStream = aviManager.AddVideoStream(true, 30, firstBitmap);
 
             System.Drawing.Bitmap bitmap;
-            for (int i = 1; i < frame; i++)
+            for (int i = 1; i < 178; i++)
             {
                 bitmap = (System.Drawing.Bitmap)System.Drawing.Bitmap.FromFile(System.IO.Path.Combine(this.folder, string.Format("image{0}.png", i)));
                 aviStream.AddFrame(bitmap);
@@ -261,7 +351,7 @@ namespace RayTraceProject
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-
+            
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
@@ -299,7 +389,6 @@ namespace RayTraceProject
             {
                 rot += rot_step;
                 this.camera.Position = new Vector3((float)Math.Sin(rot) * 60, 4, (float)Math.Cos(rot) * 60);
-
             }
 
             if (state.IsKeyDown(Keys.Enter) && !showRayTraceImage && !tracer.IsBusy)
@@ -316,28 +405,29 @@ namespace RayTraceProject
 
             
             MouseState mouseState = Mouse.GetState();
-            //if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
-            //{
+            if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
+            {
 
-            //    Vector3 screenSpaceCoord;
-            //    Ray ray;
-            //    screenSpaceCoord.X = mouseState.X;
-            //    screenSpaceCoord.Y = mouseState.Y;
-            //    screenSpaceCoord.Z = 0;
-            //    ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+                Vector3 screenSpaceCoord;
+                Ray ray;
+                screenSpaceCoord.X = mouseState.X;
+                screenSpaceCoord.Y = mouseState.Y;
+                screenSpaceCoord.Z = 0;
+                ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
 
-            //    screenSpaceCoord.Z = 1;
-            //    Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
-            //    Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
-            //    Vector3.Normalize(ref ray.Direction, out ray.Direction);
-            //    if (state.IsKeyDown(Keys.LeftControl))
-            //    {
-            //        int asd = 24356;
-            //    }
-            //    Color color;
-            //    tracer.CastRay(ray, out color, 1, null);
+                screenSpaceCoord.Z = 1;
+                Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+                Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
+                Vector3.Normalize(ref ray.Direction, out ray.Direction);
+                if (state.IsKeyDown(Keys.LeftControl))
+                {
+                    int asd = 24356;
+                }
+                Color color;
+                tracer.CastRay(ref ray, out color, 1, null, null, 1.0f);
+                //tracer.CastRay(ray, out color, 1, null);
 
-            //}
+            }
 
 
             if (tracer.IsBusy)
@@ -354,22 +444,24 @@ namespace RayTraceProject
             else
             {
                 onScreenText = string.Format("Camera: {0}", camera.Position);
+                //if (finished && !videocompiled)
+                //{
+                //    this.videocompiled = true;
+                //    this.compileVideo();
+                //    nextframe = false;
+                //}
                 //if (nextframe)
                 //{
                 //    nextframe = false;
                 //    rayTraceWatch = Stopwatch.StartNew();
-                //    for (int i = 0; i < spheres.Length; i++)
-                //    {
-                //        spheres[i].Position = new Vector3((float)Math.Sin(rot + (i * rot_space)) * 10, 3, (float)Math.Cos(rot + (i * rot_space)) * 10);
-                //    }
+                //    //for (int i = 0; i < spheres.Length; i++)
+                //    //{
+                //    //    spheres[i].Position = new Vector3((float)Math.Sin(rot + (i * rot_space)) * 10, 3, (float)Math.Cos(rot + (i * rot_space)) * 10);
+                //    //}
                 //    //this.tracer.RenderAsync();
+                //    this.tracer.RenderAsync();
                 //}
-                //if(finished && !videocompiled)
-                //{
-                //    this.videocompiled = true;
-                //    this.compileVideo();
 
-                //}
             }
 
             lastState = state;
@@ -407,30 +499,34 @@ namespace RayTraceProject
                 Matrix view = camera.View;
                 Matrix proj = camera.Projection;
                 scene.Draw(camera, ref view, ref proj, this.GraphicsDevice, gameTime);
+
+#if DEBUG
+                if (tracer.points.Count > 0 && !tracer.IsBusy)
+                {
+                    GraphicsDevice.BlendState = BlendState.AlphaBlend;
+                    SceneObject.boundingEffect.Alpha = 0.75f;
+                    SceneObject.boundingEffect.VertexColorEnabled = true;
+                    //SceneObject.boundingEffect.DiffuseColor = Vector3.One;
+                    SceneObject.boundingEffect.World = Matrix.Identity;
+                    SceneObject.boundingEffect.Techniques[0].Passes[0].Apply();
+                    GraphicsDevice.BlendState = BlendState.AlphaBlend;
+                    //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                    GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.LineList, tracer.points.ToArray(), 0, tracer.points.Count / 2);
+                    GraphicsDevice.BlendState = BlendState.Opaque;
+                }
+#endif
             }
 
             spriteBatch.Begin();
             spriteBatch.DrawString(this.onScreenFont, onScreenText, new Vector2(16, 16), Color.White);
             spriteBatch.End();
 
-#if DEBUG
-            if (tracer.points.Count > 0 && !tracer.IsBusy)
-            {
-                GraphicsDevice.BlendState = BlendState.AlphaBlend;
-                SceneObject.boundingEffect.Alpha = 0.75f;
-                SceneObject.boundingEffect.DiffuseColor = Vector3.One;
-                SceneObject.boundingEffect.World = Matrix.Identity;
-                SceneObject.boundingEffect.Techniques[0].Passes[0].Apply();
-                GraphicsDevice.BlendState = BlendState.AlphaBlend;
-                //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-                GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.LineList, tracer.points.ToArray(), 0, tracer.points.Count / 2);
-                GraphicsDevice.BlendState = BlendState.Opaque;
-            }
-#endif
+
 
             // TODO: Add your drawing code here
 
             base.Draw(gameTime);
         }
+        
     }
 }

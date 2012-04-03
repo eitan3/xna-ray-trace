@@ -114,6 +114,7 @@
     <Compile Include="Design\DesignObject.cs" />
     <Compile Include="Design\Light.cs" />
     <Compile Include="DirectionalLight.cs" />
+    <Compile Include="DrawableBox.cs" />
     <Compile Include="ILight.cs" />
     <Compile Include="List.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

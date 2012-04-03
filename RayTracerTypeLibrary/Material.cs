@@ -30,6 +30,8 @@ namespace RayTracerTypeLibrary
         private Bitmap bitmap;
         private BitmapData textureData;
         private float reflect;
+        private bool transparent;
+        private float refractionIndex;
         private string textureFilePath;
         private Vector2 texelDensity;
         object lockObject = new object();
@@ -40,15 +42,17 @@ namespace RayTracerTypeLibrary
         { 
         }
 
-        public Material(float reflectiveness, bool useTexture)
-            : this(reflectiveness, useTexture, null)
+        public Material(float reflectiveness, bool useTexture, bool transparent, float refractionIndex)
+            : this(reflectiveness, useTexture, transparent, refractionIndex, null)
         {
         }
 
-        public Material(float reflectiveness, bool useTexture, string textureFilePath)
+        public Material(float reflectiveness, bool useTexture, bool transparent, float refractionIndex, string textureFilePath)
         {
             this.reflect = reflectiveness;
             this.textureFilePath = textureFilePath;
+            this.transparent = transparent;
+            this.refractionIndex = refractionIndex;
             this.useTexture = useTexture;
         }
 
@@ -249,6 +253,18 @@ namespace RayTracerTypeLibrary
         {
             get { return this.interpolateNormals; }
             set { this.interpolateNormals = value; }
+        }
+
+        public bool Transparent
+        {
+            get { return this.transparent; }
+            set { this.transparent = value; }
+        }
+
+        public float RefractionIndex
+        {
+            get { return this.refractionIndex; }
+            set { this.refractionIndex = value; }
         }
     }
 }

@@ -19,7 +19,7 @@ namespace RayTraceProject.Spatial
             set;
         }
 
-        bool GetIntersectingFaceNormal(Ray ray, out Vector3 normal, out float? distance);
+        //bool GetIntersectingFaceNormal(Ray ray, out Vector3 normal, out float? distance);
 
         List<Triangle> GetTriangles();
 

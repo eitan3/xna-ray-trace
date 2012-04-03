@@ -20,7 +20,7 @@ namespace RayTracerTypeLibrary
         public int i1, i2, i3;
         public Vector3 surfaceNormal;
         public bool convexGeometry;
-        public Vector3 color;
+        public Vector4 color;
         public Material material;
     }
 }

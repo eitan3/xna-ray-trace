@@ -97,6 +97,7 @@
   <ItemGroup>
     <Compile Include="BoundingBoxExtensions.cs" />
     <Compile Include="Material.cs" />
+    <Compile Include="Mesh.cs" />
     <Compile Include="RayExtensions.cs" />
     <Compile Include="RayTracerTexture.cs" />
     <Compile Include="Triangle.cs" />
