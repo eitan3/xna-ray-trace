@@ -10,20 +10,20 @@ namespace RayTraceProject.Spatial
 {
     public struct IntersectionResult
     {
-        public SceneObject sceneObject;
+        public Mesh mesh;
         public Triangle triangle;
         public float u, v, d;
         public Vector3 worldPosition;
 
         public IntersectionResult(
-            SceneObject sceneObject,
+            Mesh mesh,
             Triangle triangle,
             float u,
             float v,
             float d,
             Vector3 worldPosition)
         {
-            this.sceneObject = sceneObject;
+            this.mesh = mesh;
             this.triangle = triangle;
             this.u = u;
             this.v = v;
@@ -42,6 +42,9 @@ namespace RayTraceProject.Spatial
             public CubeNode parent;
             public CubeNode[] children;
             public List<ISpatialBody> containingObjects;
+#if DEBUG
+            public DrawableBox box;
+#endif
         }
         private CubeNode root;
         private int itemTreshold = 50;
@@ -62,7 +65,7 @@ namespace RayTraceProject.Spatial
         {
             this.depth = 0;
             BoundingBox box = new BoundingBox(Vector3.Zero, Vector3.Zero);
-            BoundingBox objectBox;
+            
 
             this.root = new CubeNode();
             root.id = 0;
@@ -71,10 +74,14 @@ namespace RayTraceProject.Spatial
             root.children = null;
             for (int i = 0; i < this.objects.Count; i++)
             {
-                objectBox = this.objects[i].BoundingBox;
+                BoundingBox transformedBox = this.objects[i].BoundingBox;
                 Matrix world = (this.objects[i] as SceneObject).World;
-                Vector3.Transform(ref objectBox.Min, ref world, out objectBox.Min);
-                Vector3.Transform(ref objectBox.Max, ref world, out objectBox.Max);
+                Vector3.Transform(ref transformedBox.Min, ref world, out transformedBox.Min);
+                Vector3.Transform(ref transformedBox.Max, ref world, out transformedBox.Max);
+
+                BoundingBox objectBox = new BoundingBox(
+                    Vector3.Min(transformedBox.Min, transformedBox.Max),
+                    Vector3.Max(transformedBox.Min, transformedBox.Max));
 
                 BoundingBox.CreateMerged(ref box, ref objectBox, out box);
             }
@@ -261,8 +268,17 @@ namespace RayTraceProject.Spatial
             this.DrawNode(camera, ref view, ref proj, this.root, device, gameTime);
         }
 
+
         private void DrawNode(Camera camera, ref Matrix view, ref Matrix proj, CubeNode node, GraphicsDevice device, GameTime gameTime)
         {
+#if DEBUG
+            if (node.box == null)
+            {
+                node.box = new DrawableBox(device, node.bounds);
+            }
+            Matrix identity = Matrix.Identity;
+            node.box.Draw(device, ref view, ref proj, ref identity);
+#endif
             //this.objects.Sort(new Comparison<ISpatialBody>(fo));
             //for (int i = 0; i < this.objects.Count; i++)
             //   (this.objects[i] as GameObject3D).Draw(ref view, ref proj, gameTime);
@@ -288,7 +304,7 @@ namespace RayTraceProject.Spatial
             }
         }
 
-        public bool GetRayIntersection(ref Ray ray, out IntersectionResult? result, Triangle ignoreTriangle, SceneObject ignoreObject)
+        public bool GetRayIntersection(ref Ray ray, out IntersectionResult? result, Triangle ignoreTriangle, Mesh ignoreObject)
         {
             result = null;
 
@@ -306,6 +322,7 @@ namespace RayTraceProject.Spatial
             float intersectionV = 0;
             Triangle intersectedTriangle = null;
             bool intersectionFound = false;
+            Mesh intersectedMesh = null;
             SceneObject intersectedSceneObject = null;
 
             Vector3 v1, v2, rayDirPosition;
@@ -316,7 +333,10 @@ namespace RayTraceProject.Spatial
                 {
                     if (ignoreObject == null || ignoreObject != objects[i])
                     {
+                        
+                        
                         SceneObject sceneObject = (SceneObject)objects[i];
+
                         Matrix inverseWorld = sceneObject.InverseWorld;
                         // -- While the below LOOKS like it should work, it does not. Correct solution below!
                         //Ray transformedRay;
@@ -334,29 +354,65 @@ namespace RayTraceProject.Spatial
                         Ray transformedRay = new Ray(v1, rayDirPosition);
                         transformedRay.Direction.Normalize();
 
-                        if (sceneObject.RayIntersects(ref transformedRay))
+                        for (int meshIndex = 0; meshIndex < sceneObject.Meshes.Count; meshIndex++)
                         {
-                            List<Triangle> triangles = sceneObject.GetTriangles();
-                            for (int j = 0; j < triangles.Count; j++)
+                            if (sceneObject.Meshes[meshIndex].RayIntersects(ref transformedRay))
                             {
-                                if (ignoreTriangle == null || ignoreTriangle != triangles[j])
+                                if (sceneObject.Name == "Chess")
                                 {
-                                    float currentU, currentV, distance;
-                                    if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) &&
-                                        distance < minDistance)
+                                    int fdf = 5;
+                                }
+                                Triangle[] triangles = sceneObject.Meshes[meshIndex].Triangles;
+                                // Backface culling IF first triangle (and thus the rest) is transparent. Rewrite this in the future.
+                                if (sceneObject.Meshes[meshIndex].MeshMaterial.Transparent)
+                                {
+                                    for (int j = 0; j < triangles.Length; j++)
                                     {
-                                        minDistance = distance;
-                                        intersectionU = currentU;
-                                        intersectionV = currentV;
-                                        intersectedTriangle = triangles[j];
-                                        intersectedSceneObject = sceneObject;
-
-                                        // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
-                                        intersectionFound = true;
+                                        if (ignoreTriangle == null || ignoreTriangle != triangles[j])
+                                        {
+                                            float currentU, currentV, distance;
+                                            if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) &&
+                                                distance < minDistance)
+                                            {
+                                                minDistance = distance;
+                                                intersectionU = currentU;
+                                                intersectionV = currentV;
+                                                intersectedTriangle = triangles[j];
+                                                intersectedMesh = sceneObject.Meshes[meshIndex];
+                                                intersectedSceneObject = sceneObject;
+                                                // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
+                                                intersectionFound = true;
+                                            }
+                                        }
                                     }
                                 }
+                                else
+                                {
+                                    for (int j = 0; j < triangles.Length; j++)
+                                    {
+                                        if (ignoreTriangle == null || ignoreTriangle != triangles[j])
+                                        {
+                                            float currentU, currentV, distance;
+                                            if (transformedRay.IntersectsTriangleBackfaceCulling(triangles[j], out currentU, out currentV, out distance) &&
+                                                distance < minDistance)
+                                            {
+                                                minDistance = distance;
+                                                intersectionU = currentU;
+                                                intersectionV = currentV;
+                                                intersectedTriangle = triangles[j];
+                                                intersectedMesh = sceneObject.Meshes[meshIndex];
+                                                intersectedSceneObject = sceneObject;
+                                                // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
+                                                intersectionFound = true;
+                                            }
+                                        }
+                                    }
+                                }
+
                             }
                         }
+
+
                     }
                 }
             }
@@ -370,7 +426,7 @@ namespace RayTraceProject.Spatial
                 Vector3.Transform(ref interpolatedPosition, ref world, out interpolatedPosition);
 
                 result = new IntersectionResult(
-                    intersectedSceneObject,
+                    intersectedMesh,
                     intersectedTriangle,
                     intersectionU,
                     intersectionV,
@@ -396,7 +452,7 @@ namespace RayTraceProject.Spatial
                 }
                 else
                 {
-                    cubeoids.Add(result.Value, current);
+                    cubeoids.Add(result.Value, current); // result.Value
                 }
             }
         }

@@ -31,7 +31,8 @@ namespace RayTracePipeline
     {
         const float EPSILON = 0.001f;
         private bool interpolateNormals = true;
-        List<Triangle> triangles;
+        List<Mesh> meshes;
+        //List<Triangle> triangles;
         List<Triangle> cyclicPreventor;
         Color c;
         static int fleh = 0;
@@ -79,6 +80,33 @@ namespace RayTracePipeline
             set { this.interpolateNormals = value; }
         }
 
+        [DisplayName("Refraction Index")]
+        [Description("Specifies the refraction index relative of a material relative to that of vacuum.")]
+        [DefaultValue(1.33f)] // Water
+        public float RefractionIndex
+        {
+            get;
+            set;
+        }
+
+        [DisplayName("Transparent")]
+        [Description("Determines if the material is transparent or not.")]
+        [DefaultValue(false)]
+        public bool Transparent
+        {
+            get;
+            set;
+        }
+
+        [DisplayName("Use Vertex Colors")]
+        [Description("Specifies if colors from the vertex color channel should be used, if it exists.")]
+        [DefaultValue(false)]
+        public bool UseVertexColors
+        {
+            get;
+            set;
+        }
+
         private Material material;
 
         public override ModelContent Process(NodeContent input, ContentProcessorContext context)
@@ -88,136 +116,135 @@ namespace RayTracePipeline
             ModelContent content = base.Process(input, context);
             //System.Diagnostics.Debugger.Launch();
             this.CreateMaterial();
-            
-            this.triangles = new List<Triangle>();
+
+            this.meshes = new List<Mesh>();
             this.FindVertices(input);
+
             //System.Diagnostics.Debugger.Launch();
-            this.DetermineConvexGeometry();
 
             this.cyclicPreventor = new List<Triangle>();
 
-            BoundingBox boundingBox = this.CreateBoundingBox(triangles);
-
             Dictionary<string, object> contentData = new Dictionary<string, object>();
 
-            contentData.Add("vertices", triangles);
-            contentData.Add("box", boundingBox);
-            contentData.Add("material", this.material);
+            //contentData.Add("vertices", triangles);
+            //contentData.Add("box", boundingBox);
+            //contentData.Add("material", this.material);
+            contentData.Add("Meshes", this.meshes);
 
             content.Tag = contentData;
             return content;
         }
 
-        private void DetermineConvexGeometry()
-        {
-            Plane trianglePlane1, trianglePlane2, trianglePlane3;
-            List<Triangle> trianglesToProcess = new List<Triangle>(this.triangles);
-            Triangle currentTriangle, compareTriangle;
+        //private void DetermineConvexGeometry()
+        //{
+        //    Plane trianglePlane1, trianglePlane2, trianglePlane3;
+        //    List<Triangle> trianglesToProcess = new List<Triangle>(this.triangles);
+        //    Triangle currentTriangle, compareTriangle;
 
-            while (trianglesToProcess.Count > 0)
-            {
-                int index = trianglesToProcess.Count - 1;
-                currentTriangle = trianglesToProcess[index];
+        //    while (trianglesToProcess.Count > 0)
+        //    {
+        //        int index = trianglesToProcess.Count - 1;
+        //        currentTriangle = trianglesToProcess[index];
 
-                this.GetPlaneForVector(currentTriangle.v1, currentTriangle.n1, out trianglePlane1);
-                this.GetPlaneForVector(currentTriangle.v2, currentTriangle.n2, out trianglePlane2);
-                this.GetPlaneForVector(currentTriangle.v3, currentTriangle.n3, out trianglePlane3);
+        //        this.GetPlaneForVector(currentTriangle.v1, currentTriangle.n1, out trianglePlane1);
+        //        this.GetPlaneForVector(currentTriangle.v2, currentTriangle.n2, out trianglePlane2);
+        //        this.GetPlaneForVector(currentTriangle.v3, currentTriangle.n3, out trianglePlane3);
                 
-                currentTriangle.convexGeometry = true;
-                for (int j = index - 1; j >= 0; j--)
-                {
-                    compareTriangle = trianglesToProcess[j];
-                    if ((this.PlanePointDot(trianglePlane1, currentTriangle.v1, compareTriangle.v1, compareTriangle.n1) - EPSILON > 0.0f) ||
-                        (this.PlanePointDot(trianglePlane1, currentTriangle.v1, compareTriangle.v2, compareTriangle.n2) - EPSILON > 0.0f) ||
-                        (this.PlanePointDot(trianglePlane1, currentTriangle.v1, compareTriangle.v3, compareTriangle.n3) - EPSILON > 0.0f) ||
-                        (this.PlanePointDot(trianglePlane2, currentTriangle.v2, compareTriangle.v1, compareTriangle.n1) - EPSILON > 0.0f) ||
-                        (this.PlanePointDot(trianglePlane2, currentTriangle.v2, compareTriangle.v2, compareTriangle.n2) - EPSILON > 0.0f) ||
-                        (this.PlanePointDot(trianglePlane2, currentTriangle.v2, compareTriangle.v3, compareTriangle.n3) - EPSILON > 0.0f) ||
-                        (this.PlanePointDot(trianglePlane3, currentTriangle.v3, compareTriangle.v1, compareTriangle.n1) - EPSILON > 0.0f) ||
-                        (this.PlanePointDot(trianglePlane3, currentTriangle.v3, compareTriangle.v2, compareTriangle.n2) - EPSILON > 0.0f) ||
-                        (this.PlanePointDot(trianglePlane3, currentTriangle.v3, compareTriangle.v3, compareTriangle.n3) - EPSILON > 0.0f))
-                    {
+        //        currentTriangle.convexGeometry = true;
+        //        for (int j = index - 1; j >= 0; j--)
+        //        {
+        //            compareTriangle = trianglesToProcess[j];
+        //            if ((this.PlanePointDot(trianglePlane1, currentTriangle.v1, compareTriangle.v1, compareTriangle.n1) - EPSILON > 0.0f) ||
+        //                (this.PlanePointDot(trianglePlane1, currentTriangle.v1, compareTriangle.v2, compareTriangle.n2) - EPSILON > 0.0f) ||
+        //                (this.PlanePointDot(trianglePlane1, currentTriangle.v1, compareTriangle.v3, compareTriangle.n3) - EPSILON > 0.0f) ||
+        //                (this.PlanePointDot(trianglePlane2, currentTriangle.v2, compareTriangle.v1, compareTriangle.n1) - EPSILON > 0.0f) ||
+        //                (this.PlanePointDot(trianglePlane2, currentTriangle.v2, compareTriangle.v2, compareTriangle.n2) - EPSILON > 0.0f) ||
+        //                (this.PlanePointDot(trianglePlane2, currentTriangle.v2, compareTriangle.v3, compareTriangle.n3) - EPSILON > 0.0f) ||
+        //                (this.PlanePointDot(trianglePlane3, currentTriangle.v3, compareTriangle.v1, compareTriangle.n1) - EPSILON > 0.0f) ||
+        //                (this.PlanePointDot(trianglePlane3, currentTriangle.v3, compareTriangle.v2, compareTriangle.n2) - EPSILON > 0.0f) ||
+        //                (this.PlanePointDot(trianglePlane3, currentTriangle.v3, compareTriangle.v3, compareTriangle.n3) - EPSILON > 0.0f))
+        //            {
                         
-                        currentTriangle.convexGeometry = false;
-                        trianglesToProcess.RemoveAt(j);
-                        //compareTriangle.convexGeometry = false;
+        //                currentTriangle.convexGeometry = false;
+        //                trianglesToProcess.RemoveAt(j);
+        //                //compareTriangle.convexGeometry = false;
                         
-                        // Theres no need to process triangle at 'j' later on so remove it from trianglesToProcess.
-                        // Triangle at 'index' should be removed too, but it cant be removed just yet.
-                        //trianglesToProcess.RemoveAt(j);
-                    }
-                }
+        //                // Theres no need to process triangle at 'j' later on so remove it from trianglesToProcess.
+        //                // Triangle at 'index' should be removed too, but it cant be removed just yet.
+        //                //trianglesToProcess.RemoveAt(j);
+        //            }
+        //        }
 
-                trianglesToProcess.Remove(currentTriangle);
-            }
-        }
+        //        trianglesToProcess.Remove(currentTriangle);
+        //    }
+        //}
 
-        private float PlanePointDot(Plane plane, Vector3 pointOnPlane, Vector3 pointInSpace, Vector3 pointInSpaceNormal)
-        {
-            if (Vector3.Dot(plane.Normal, pointInSpaceNormal) - EPSILON > 0.0f)
-                return Vector3.Dot(plane.Normal, Vector3.Normalize(pointInSpace - pointOnPlane));
-            else
-                return -1;
-        }
+        //private float PlanePointDot(Plane plane, Vector3 pointOnPlane, Vector3 pointInSpace, Vector3 pointInSpaceNormal)
+        //{
+        //    if (Vector3.Dot(plane.Normal, pointInSpaceNormal) - EPSILON > 0.0f)
+        //        return Vector3.Dot(plane.Normal, Vector3.Normalize(pointInSpace - pointOnPlane));
+        //    else
+        //        return -1;
+        //}
 
-        private void GetPlaneForVector(Vector3 position, Vector3 normal, out Plane plane)
-        {
-            // Plane equation: Ax + By + Cz + D = 0
-            // We need to solve for D, so the equation turns into:
-            // Ax + By + Cz = -D
+        //private void GetPlaneForVector(Vector3 position, Vector3 normal, out Plane plane)
+        //{
+        //    // Plane equation: Ax + By + Cz + D = 0
+        //    // We need to solve for D, so the equation turns into:
+        //    // Ax + By + Cz = -D
 
-            float D = (normal.X * position.X) + (normal.Y * position.Y) + (normal.Z * position.Z);
-            plane = new Plane(normal, D);
+        //    float D = (normal.X * position.X) + (normal.Y * position.Y) + (normal.Z * position.Z);
+        //    plane = new Plane(normal, D);
 
-            //Vector3 dirToVector = Vector3.Normalize(position);
-            //Vector3 dirToPlane = Vector3.Normalize(normal);
-            //float hypotenuse1 = position.Length();
+        //    //Vector3 dirToVector = Vector3.Normalize(position);
+        //    //Vector3 dirToPlane = Vector3.Normalize(normal);
+        //    //float hypotenuse1 = position.Length();
 
-            //float dot = Vector3.Dot(dirToVector, dirToPlane);
-            //float angle = (1 - dot) * MathHelper.PiOver2;
+        //    //float dot = Vector3.Dot(dirToVector, dirToPlane);
+        //    //float angle = (1 - dot) * MathHelper.PiOver2;
 
-            //float length = (float)Math.Cos(angle) * hypotenuse1;
+        //    //float length = (float)Math.Cos(angle) * hypotenuse1;
 
-            //plane.Normal = normal;
-            //plane.D = length;
-        }
+        //    //plane.Normal = normal;
+        //    //plane.D = length;
+        //}
 
-        private bool PointAbovePlane(Plane plane, Vector3 point)
-        {
-            Vector3 planeCenter = -plane.D * plane.Normal;
-            float dot = Vector3.Dot(Vector3.Normalize(point - planeCenter), plane.Normal);
-            System.Diagnostics.Debug.WriteLine(dot);
-            return (dot >= 0.0f);
-        }
+        //private bool PointAbovePlane(Plane plane, Vector3 point)
+        //{
+        //    Vector3 planeCenter = -plane.D * plane.Normal;
+        //    float dot = Vector3.Dot(Vector3.Normalize(point - planeCenter), plane.Normal);
+        //    System.Diagnostics.Debug.WriteLine(dot);
+        //    return (dot >= 0.0f);
+        //}
 
-        private bool ExamineTriangleConvex(Triangle triangle)
-        {
-            for (int i = 0; i < this.triangles.Count; i++ )
-            {
-                if (this.triangles[i].id != triangle.id &&
-                    (this.triangles[i].i1 == triangle.i1 ||
-                    this.triangles[i].i2 == triangle.i2 ||
-                    this.triangles[i].i3 == triangle.i3))
-                {
-                    this.cyclicPreventor.Add(triangle);
+        //private bool ExamineTriangleConvex(Triangle triangle)
+        //{
+        //    for (int i = 0; i < this.triangles.Count; i++ )
+        //    {
+        //        if (this.triangles[i].id != triangle.id &&
+        //            (this.triangles[i].i1 == triangle.i1 ||
+        //            this.triangles[i].i2 == triangle.i2 ||
+        //            this.triangles[i].i3 == triangle.i3))
+        //        {
+        //            this.cyclicPreventor.Add(triangle);
 
-                    float dot;
-                    Vector3.Dot(ref this.triangles[i].surfaceNormal, ref triangle.surfaceNormal, out dot);
-                    if (dot < 0)
-                    {
-                        return false;
-                    }
+        //            float dot;
+        //            Vector3.Dot(ref this.triangles[i].surfaceNormal, ref triangle.surfaceNormal, out dot);
+        //            if (dot < 0)
+        //            {
+        //                return false;
+        //            }
 
-                    ExamineTriangleConvex(this.triangles[i]);
-                }
-            }
-            return true;
-        }
+        //            ExamineTriangleConvex(this.triangles[i]);
+        //        }
+        //    }
+        //    return true;
+        //}
 
         private void CreateMaterial()
         {
             
-            this.material = new Material(this.Reflectiveness, this.UseTexture, this.TextureFilePath);
+            this.material = new Material(this.Reflectiveness, this.UseTexture, this.Transparent, this.RefractionIndex, this.TextureFilePath);
             this.material.InterpolateNormals = this.InterpolateNormals;
             //System.Diagnostics.Debugger.Launch();
             if (this.UseTexture)
@@ -229,10 +256,11 @@ namespace RayTracePipeline
 
         private void FindVertices(NodeContent node)
         {
-           
             MeshContent mesh = node as MeshContent;
             if (mesh != null)
             {
+                List<Triangle> triangles = new List<Triangle>();
+
                 //System.Diagnostics.Debugger.Launch();
                 Matrix absoluteTransform = mesh.AbsoluteTransform;
                 Matrix absoluteTransformInvertTranspose = Matrix.Transpose(Matrix.Invert(absoluteTransform));
@@ -318,12 +346,20 @@ namespace RayTracePipeline
                         triangle.i3 = geometry.Indices[i + 2];
                         triangle.id = triangleIndex++;
                         triangle.surfaceNormal = surfaceNormal;
-                        triangle.color = this.DiffuseColor.ToVector3();
+
+                        if (this.UseVertexColors && colors != null)
+                            triangle.color = ((Color)colors[geometry.Indices[i]]).ToVector4();
+                        else
+                            triangle.color = this.DiffuseColor.ToVector4();
                         //triangle.material = this.material;
-                        this.triangles.Add(triangle);
+                        triangles.Add(triangle);
                     }
                     
                 }
+
+                BoundingBox box = this.CreateBoundingBox(triangles);
+                Mesh tracerMesh = new Mesh(triangles.ToArray(), this.material, box);
+                this.meshes.Add(tracerMesh);
             }
 
             foreach (NodeContent child in node.Children)

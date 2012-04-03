@@ -12,6 +12,6 @@ namespace RayTraceProject.Spatial
         List<ISpatialBody> Bodies { get; }
         void Build();
 
-        bool GetRayIntersection(ref Ray ray, out IntersectionResult? result, Triangle ignoreTriangle, SceneObject ignoreObject);
+        bool GetRayIntersection(ref Ray ray, out IntersectionResult? result, Triangle ignoreTriangle, Mesh ignoreObject);
     }
 }

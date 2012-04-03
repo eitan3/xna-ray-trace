@@ -11,7 +11,7 @@ namespace RayTraceProject
 {
     public class SceneObject : Spatial.ISpatialBody
     {
-        List<Triangle> triangles;
+        List<Mesh> meshes;
         BoundingBox boundingBox;
         Vector3 position;
         Vector3 rotation;
@@ -21,12 +21,16 @@ namespace RayTraceProject
         Matrix world;
         Matrix inverseWorld;
 
+        DrawableBox box;
+
 #if DEBUG
         public static BasicEffect boundingEffect = null;
         static RasterizerState boundingRasterState;
         VertexPositionColor[] boundingVertices;
         int[] boundingIndices;
 #endif
+
+        public List<Mesh> Meshes { get { return this.meshes; } }
 
         public BoundingBox BoundingBox
         {
@@ -109,16 +113,16 @@ namespace RayTraceProject
                 throw new ArgumentException("Model must be built using the TracerModelProcessor");
 
             Dictionary<string, object> modelData = (Dictionary<string, object>)model.Tag;
-            this.triangles = (List<Triangle>)modelData["vertices"];
-            this.boundingBox = (BoundingBox)modelData["box"];
-            Material material = (Material)modelData["material"];
-            material.Init();
-            for (int i = 0; i < this.triangles.Count; i++)
+            this.meshes = (List<Mesh>)modelData["Meshes"];
+
+            for (int i = 0; i < this.meshes.Count; i++)
             {
-                this.triangles[i].material = material;
+                this.boundingBox = BoundingBox.CreateMerged(this.boundingBox, this.meshes[i].MeshBoundingBox);
+                this.meshes[i].MeshMaterial.Init();
             }
 
-            var foo = this.triangles.Where(x => x.convexGeometry);
+            this.box = new DrawableBox(device, this.boundingBox);
+            //var foo = this.triangles.Where(x => x.convexGeometry);
 
 #if DEBUG
             if(SceneObject.boundingEffect == null)
@@ -209,15 +213,18 @@ namespace RayTraceProject
             //}
 
 #if DEBUG
-            RasterizerState oldRasterState = device.RasterizerState;
-            device.RasterizerState = SceneObject.boundingRasterState;
-            SceneObject.boundingEffect.World = this.world;
-            SceneObject.boundingEffect.View = view;
-            SceneObject.boundingEffect.Projection = proj;
-            SceneObject.boundingEffect.DiffuseColor = Vector3.One;
-            SceneObject.boundingEffect.CurrentTechnique.Passes[0].Apply();
-            device.DrawUserIndexedPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, this.boundingVertices, 0, this.boundingVertices.Length, this.boundingIndices, 0, 12);
-            device.RasterizerState = oldRasterState;
+            this.box.Draw(device, ref view, ref proj, ref this.world);
+            //RasterizerState oldRasterState = device.RasterizerState;
+            //device.RasterizerState = SceneObject.boundingRasterState;
+            //SceneObject.boundingEffect.World = this.world;
+            //SceneObject.boundingEffect.View = view;
+            //SceneObject.boundingEffect.Projection = proj;
+            //SceneObject.boundingEffect.DiffuseColor = Vector3.One;
+            //boundingEffect.VertexColorEnabled = true;
+            //SceneObject.boundingEffect.CurrentTechnique.Passes[0].Apply();
+            
+            //device.DrawUserIndexedPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, this.boundingVertices, 0, this.boundingVertices.Length, this.boundingIndices, 0, 12);
+            //device.RasterizerState = oldRasterState;
 #endif
             //eff.EnableDefaultLighting();
             //eff.CurrentTechnique.Passes[0].Apply();
@@ -227,7 +234,7 @@ namespace RayTraceProject
 
         public List<Triangle> GetTriangles()
         {
-            return this.triangles;
+            return null; // this.triangles;
         }
 
         public bool RayIntersects(ref Ray ray)
@@ -237,54 +244,54 @@ namespace RayTraceProject
             return distance.HasValue;
         }
 
-        public bool GetIntersectingFaceNormal(Ray ray, out Vector3 normal, out float? distance)
-        {
-            bool intersects = false;
-            normal = Vector3.Zero;
-            distance = null;
+        //public bool GetIntersectingFaceNormal(Ray ray, out Vector3 normal, out float? distance)
+        //{
+        //    bool intersects = false;
+        //    normal = Vector3.Zero;
+        //    distance = null;
 
-            ray.Position = Vector3.Transform(ray.Position, this.inverseWorld);
-            ray.Direction = Vector3.Transform(ray.Direction, this.inverseWorld);
+        //    ray.Position = Vector3.Transform(ray.Position, this.inverseWorld);
+        //    ray.Direction = Vector3.Transform(ray.Direction, this.inverseWorld);
 
-            if (this.boundingBox.Intersects(ray) == null)
-            {
-                intersects = false;
-            }
-            else
-            {
-                float? currentDistance = float.NaN;
-                float minDistance = float.MaxValue;
-                Vector3 minVector1, minVector2, minVector3;
-                Vector3 vector1, vector2, vector3;
-                vector1 = vector2 = vector3 = Vector3.Zero;
+        //    if (this.boundingBox.Intersects(ray) == null)
+        //    {
+        //        intersects = false;
+        //    }
+        //    else
+        //    {
+        //        float? currentDistance = float.NaN;
+        //        float minDistance = float.MaxValue;
+        //        Vector3 minVector1, minVector2, minVector3;
+        //        Vector3 vector1, vector2, vector3;
+        //        vector1 = vector2 = vector3 = Vector3.Zero;
 
-                for (int i = 0; i < this.triangles.Count; i++)
-                {
-                    Triangle triangle = this.triangles[i];
+        //        for (int i = 0; i < this.triangles.Count; i++)
+        //        {
+        //            Triangle triangle = this.triangles[i];
 
-                    //RayTriangleIntesercts(ray, triangle);
-                    //RayIntersectsTriangle(ref ray, ref vector1, ref vector2, ref vector3, out currentDistance);
-                    if (distance != null && minDistance > currentDistance.Value)
-                    {
-                        intersects = true;
-                        minDistance = currentDistance.Value;
+        //            //RayTriangleIntesercts(ray, triangle);
+        //            //RayIntersectsTriangle(ref ray, ref vector1, ref vector2, ref vector3, out currentDistance);
+        //            if (distance != null && minDistance > currentDistance.Value)
+        //            {
+        //                intersects = true;
+        //                minDistance = currentDistance.Value;
 
-                        minVector1 = vector1;
-                        minVector2 = vector2;
-                        minVector3 = vector3;
-                    }
+        //                minVector1 = vector1;
+        //                minVector2 = vector2;
+        //                minVector3 = vector3;
+        //            }
 
-                }
+        //        }
 
-                if (intersects)
-                {
-                    normal = Vector3.Cross(vector2 - vector1, vector3 - vector1);
-                    distance = minDistance;
-                }
-            }
+        //        if (intersects)
+        //        {
+        //            normal = Vector3.Cross(vector2 - vector1, vector3 - vector1);
+        //            distance = minDistance;
+        //        }
+        //    }
 
-            return intersects;
-        }
+        //    return intersects;
+        //}
 
         //public static bool RayTriangleIntesercts(Ray ray, Triangle triangle, out float u, out float v, out float distance)
         //{

@@ -88,9 +88,10 @@
       <Name>Sphere</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_Scale>3</ProcessorParameters_Scale>
+      <ProcessorParameters_DiffuseColor>255, 0, 0, 32</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_RefractionIndex>1.32</ProcessorParameters_RefractionIndex>
       <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
-      <ProcessorParameters_DiffuseColor>0, 0, 255, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_Scale>2</ProcessorParameters_Scale>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -102,28 +103,34 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="cube.fbx">
+    <None Include="cube.fbx">
       <Name>cube</Name>
       <Importer>FbxImporter</Importer>
       <Processor>ModelProcessor</Processor>
-    </Compile>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="plane.fbx">
       <Name>ground</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\wossy.jpg</ProcessorParameters_TextureFilePath>
+      <ProcessorParameters_TextureFilePath>C:\Users\Emil\Pictures\checkers.bmp</ProcessorParameters_TextureFilePath>
       <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
       <ProcessorParameters_Scale>100</ProcessorParameters_Scale>
-      <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
+      <ProcessorParameters_RefractionIndex>1.32</ProcessorParameters_RefractionIndex>
+      <ProcessorParameters_InterpolateNormals>False</ProcessorParameters_InterpolateNormals>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="monkey.fbx">
       <Name>monkey</Name>
       <Importer>FbxImporter</Importer>
-      <Processor>ModelProcessor</Processor>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_Scale>5</ProcessorParameters_Scale>
+      <ProcessorParameters_Transparent>True</ProcessorParameters_Transparent>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 64</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_RefractionIndex>1.32</ProcessorParameters_RefractionIndex>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +179,7 @@
       <ProcessorParameters_RotationX>-90</ProcessorParameters_RotationX>
       <ProcessorParameters_Scale>3</ProcessorParameters_Scale>
       <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_UseVertexColors>True</ProcessorParameters_UseVertexColors>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -182,7 +190,29 @@
       <ProcessorParameters_Scale>32</ProcessorParameters_Scale>
       <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
       <ProcessorParameters_RotationY>180</ProcessorParameters_RotationY>
-      <ProcessorParameters_Reflectiveness>0.6</ProcessorParameters_Reflectiveness>
+      <ProcessorParameters_Reflectiveness>1</ProcessorParameters_Reflectiveness>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="meh.fbx">
+      <Name>meh</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_ColorKeyColor>250, 0, 255, 128</ProcessorParameters_ColorKeyColor>
+      <ProcessorParameters_Scale>10</ProcessorParameters_Scale>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_RefractionIndex>1.34</ProcessorParameters_RefractionIndex>
+      <ProcessorParameters_Transparent>True</ProcessorParameters_Transparent>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="chessboard.fbx">
+      <Name>chessboard</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_RotationX>-90</ProcessorParameters_RotationX>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 64</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_UseVertexColors>True</ProcessorParameters_UseVertexColors>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />
