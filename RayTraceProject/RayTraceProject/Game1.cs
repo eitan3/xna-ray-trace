@@ -43,8 +43,8 @@ namespace RayTraceProject
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
-            graphics.PreferredBackBufferWidth = 1024;
-            graphics.PreferredBackBufferHeight = 1024;
+            graphics.PreferredBackBufferWidth = 512;
+            graphics.PreferredBackBufferHeight = 512;
             Content.RootDirectory = "Content";
             Vector3 v1 = new Vector3(0, 0, 1);
             Vector3 v2 = new Vector3(-0.0076134061f, -0.22078878f, -0.97529179f);
@@ -111,7 +111,7 @@ namespace RayTraceProject
             
             
 
-            plane = new SceneObject(GraphicsDevice, planeModel, Vector3.Zero, Vector3.Zero);
+            plane = new SceneObject(GraphicsDevice, planeModel, Vector3.Zero, new Vector3(MathHelper.PiOver2, 0, 0));
             plane.Name = "Ground";
 
 
@@ -120,109 +120,25 @@ namespace RayTraceProject
             //android.Rotation = new Vector3(0, -MathHelper.PiOver2, 0);
 
             //System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
-            this.folder = System.IO.Path.Combine(@"D:\Videos", string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
+            ////////////this.folder = System.IO.Path.Combine(@"D:\Videos", string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
 
-            if (!System.IO.Directory.Exists(folder))
-            {
-                System.IO.Directory.CreateDirectory(this.folder);
-            }
-
-            //crate = new SceneObject(GraphicsDevice, coffeeModel, new Vector3(0, 9, 0), Vector3.Zero);
-
-
-
-
-
-
-            //SceneObject cube = new SceneObject(GraphicsDevice, cubeModel, new Vector3(0, 10, 0), Vector3.Zero);
-            //cube.Scale = new Vector3(5, 1, 1);
-            
-            //crate2 = new SceneObject(crateModel, new Vector3(50, 9, 0), Vector3.Zero);
-
-            
+            ////////////if (!System.IO.Directory.Exists(folder))
+            ////////////{
+            ////////////    System.IO.Directory.CreateDirectory(this.folder);
+            ////////////}
 
             this.scene = new Spatial.OctreeSpatialManager();
+            this.scene.Bodies.Add(plane);
 
-            //SceneObject chessboard = new SceneObject(GraphicsDevice, chessboardModel, Vector3.Zero, Vector3.Zero);
-           // chessboard.Name = "Chess";
-            //this.scene.Bodies.Add(chessboard);
-
-            //scene.Bodies.Add(crate);
-            //SceneObject monkey = new SceneObject(GraphicsDevice, monkeyModel, new Vector3(0, 6, 0), Vector3.Zero);
-            //scene.Bodies.Add(monkey);
-            //SceneObject torus = new SceneObject(GraphicsDevice, torusModel, new Vector3(0, 4, 0), Vector3.Zero);
-            //scene.Bodies.Add(torus);
-            //scene.Bodies.Add(cube); 
-            //for (int i = 0; i < 0; i++)
-            //{
-            //    for (int j = 0; j < 0; j++)
-            //    {
-            //        SceneObject sphere = new SceneObject(GraphicsDevice, sphereModel, new Vector3(30, 8, -40), Vector3.Zero);
-            //        sphere.Name = "Sphere";
-            //        sphere.Position = new Vector3(30 - (8 * i), 8, -40 + (8 * j));
-            //        scene.Bodies.Add(sphere);
-            //    }
-            //}
-            SceneObject sphere = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 0, 0), new Vector3(0, 0, 1.57f));
+            SceneObject sphere = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 0, 8), new Vector3(0, 0, 0));
             sphere.Scale = Vector3.One;
             sphere.Name = "Sphere";
-            sphere.Position = new Vector3(0, 0, 0);
-            //scene.Bodies.Add(sphere);
-            sphereRow1[0] = sphere;
-            //spheres[0].Position = new Vector3((float)Math.Sin(rot) * 17, 8 + ((float)Math.Cos(rot) * 17), 10);
-            SceneObject sphere2 = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 0, 0), Vector3.Zero);
-            sphere2.Name = "Sphere 1";
-            sphere2.Position = new Vector3(50, 2, 50);
             scene.Bodies.Add(sphere);
-
-
-            sphere2 = new SceneObject(GraphicsDevice, sphereModel, new Vector3(-50, 2, -50), Vector3.Zero);
-            sphere2.Name = "Sphere ABC";
-            //scene.Bodies.Add(sphere2);
-
-            sphere2 = new SceneObject(GraphicsDevice, sphereModel, new Vector3(50, 2, -50), Vector3.Zero);
-            sphere2.Name = "Sphere 3";
-            //scene.Bodies.Add(sphere2);
-
-            sphere2 = new SceneObject(GraphicsDevice, sphereModel, new Vector3(-50, 2, 50), Vector3.Zero);
-            sphere2.Name = "Sphere 4";
-            //scene.Bodies.Add(sphere2);
-
-
-
-            SceneObject mat = new SceneObject(GraphicsDevice, matModel, new Vector3(-20, 0, 0), Vector3.Zero);
-            mat.Name = "Mat";
-            //scene.Bodies.Add(mat);
-
-            SceneObject wossy = new SceneObject(GraphicsDevice, monkeyModel, new Vector3(0, 21, 0), Vector3.Zero);
-            mat.Name = "Wossy";
-            //scene.Bodies.Add(wossy);
-
-            //for (int i = 0; i < 5; i++)
-            //{
-            //    sphereRow1[i] = new SceneObject(GraphicsDevice, sphereModel, new Vector3((float)Math.Sin(rot + (i * rot_spaceRow1)) * 8, 1, (float)Math.Cos(rot + (i * rot_spaceRow1)) * 8), Vector3.Zero);
-            //    scene.Bodies.Add(sphereRow1[i]);
-            //}
-
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    sphereRow2[i] = new SceneObject(GraphicsDevice, sphereModel, new Vector3((float)Math.Sin(rot + (i * rot_spaceRow2)) * 5, 4, (float)Math.Cos(rot + (i * rot_spaceRow2)) * 5), Vector3.Zero);
-            //    scene.Bodies.Add(sphereRow2[i]);
-            //}
-
-            //scene.Bodies.Add(plane);
-
-            
-
-            meh = new SceneObject(GraphicsDevice, mehModel, new Vector3(-10, 11.79993f, 0), Vector3.Zero);
-            meh.Name = "meh";
-            //scene.Bodies.Add(meh);
-
 
             this.scene.Build();
 
             //this.camera = new Camera(new Vector3(22, 27, 58), new Vector3(0, 0, 0), Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            this.camera = new Camera(new Vector3(0, 0, 5), new Vector3(0, 0, 0), Vector3.Up, 1.57f, GraphicsDevice.Viewport.AspectRatio, 1.0f, 1000.0f);
+            this.camera = new Camera(new Vector3(0, 0, 16), sphere.Position, Vector3.Up, 1.57f, GraphicsDevice.Viewport.AspectRatio, 1.0f, 1000.0f);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
@@ -232,32 +148,19 @@ namespace RayTraceProject
             tracer.CurrentScene = this.scene;
             tracer.CurrentTarget = rayTraceTarget;
             tracer.GraphicsDevice = GraphicsDevice;
-            tracer.MaxReflections = 2;
+            tracer.MaxReflections = 4;
             tracer.UseMultisampling = false;
             tracer.MultisampleQuality = 1;
             tracer.RenderCompleted += new EventHandler<System.ComponentModel.AsyncCompletedEventArgs>(tracer_RenderCompleted);
 
 
-            //light = new SpotLight();
-            //light.Color = Vector3.One;
-            //light.Position = (new Vector3(-90, 90, 0));
-            //light.Direction = new Vector3((float)Math.Sin(rot), -(float)Math.Cos(rot), 0);
-            //light.SpotAngle = MathHelper.PiOver2;
-            //light.Intensity = 3.0f;
-            //tracer.Lights.Add(light);
-
-            //light = new SpotLight();
-            //light.Color = Vector3.One;
-            //light.Position = new Vector3(0, 20, 50);
-            //light.Direction = -Vector3.Normalize(light.Position);
-            //light.SpotAngle = MathHelper.PiOver2;
-            //light.Intensity = 1.0f;
-            //tracer.Lights.Add(light);
-
-            Matrix proj = camera.Projection;
-            Matrix view = camera.View;
-            Matrix viewproj = view * proj;
-            viewproj = Matrix.Invert(viewproj);
+            light = new SpotLight();
+            light.Color = Vector3.One;
+            light.Position = (new Vector3(0, 20, 10));
+            light.Direction = -Vector3.Normalize(light.Position);
+            light.SpotAngle = MathHelper.PiOver2;
+            light.Intensity = 1f;
+            tracer.Lights.Add(light);
 
             // TODO: use this.Content to load your game content here
         }
@@ -276,42 +179,42 @@ namespace RayTraceProject
         float rot = 0;
         void tracer_RenderCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
-            rayTraceWatch.Stop();
-            Debug.WriteLine(rayTraceWatch.Elapsed.ToString());
-            string filePath = System.IO.Path.Combine(this.folder, string.Format("image{0}.png", frame++));
-            using(System.IO.FileStream fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
-            {
-                rayTraceTarget.SaveAsPng(fs, rayTraceTarget.Width, rayTraceTarget.Height);
-                fs.Close();
-            }
+            //////////rayTraceWatch.Stop();
+            //////////Debug.WriteLine(rayTraceWatch.Elapsed.ToString());
+            //////////string filePath = System.IO.Path.Combine(this.folder, string.Format("image{0}.png", frame++));
+            //////////using(System.IO.FileStream fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
+            //////////{
+            //////////    rayTraceTarget.SaveAsPng(fs, rayTraceTarget.Width, rayTraceTarget.Height);
+            //////////    fs.Close();
+            //////////}
 
-            rot += rot_step;
-            light.Direction = new Vector3((float)Math.Sin(rot), -(float)Math.Cos(rot), 0);
-            if (rot >= MathHelper.TwoPi)
-            {
-                finished = true;
-            }
-            //for (int i = 0; i < 5; i++)
-            //{
-            //    sphereRow1[i].Position = new Vector3((float)Math.Sin(rot + (i * rot_spaceRow1)) * 8, 1, (float)Math.Cos(rot + (i * rot_spaceRow1)) * 8);
-            //}
+            //////////rot += rot_step;
+            //////////light.Direction = new Vector3((float)Math.Sin(rot), -(float)Math.Cos(rot), 0);
+            //////////if (rot >= MathHelper.TwoPi)
+            //////////{
+            //////////    finished = true;
+            //////////}
+            ////////////for (int i = 0; i < 5; i++)
+            ////////////{
+            ////////////    sphereRow1[i].Position = new Vector3((float)Math.Sin(rot + (i * rot_spaceRow1)) * 8, 1, (float)Math.Cos(rot + (i * rot_spaceRow1)) * 8);
+            ////////////}
 
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    sphereRow2[i].Position = new Vector3((float)Math.Sin((rot*2) + (i * rot_spaceRow2)) * 5, 4, (float)Math.Cos((rot*2) + (i * rot_spaceRow2)) * 5);
-            //}
-            if (rot >= MathHelper.TwoPi)
-            {
-                finished = true;
-            }
+            ////////////for (int i = 0; i < 4; i++)
+            ////////////{
+            ////////////    sphereRow2[i].Position = new Vector3((float)Math.Sin((rot*2) + (i * rot_spaceRow2)) * 5, 4, (float)Math.Cos((rot*2) + (i * rot_spaceRow2)) * 5);
+            ////////////}
+            //////////if (rot >= MathHelper.TwoPi)
+            //////////{
+            //////////    finished = true;
+            //////////}
 
 
-            //if (frame == maxI)
-            //{
-            //    finished = true;
-            //}
+            ////////////if (frame == maxI)
+            ////////////{
+            ////////////    finished = true;
+            ////////////}
 
-            nextframe = true;
+            //////////nextframe = true;
         }
 
         private void compileVideo()
@@ -419,10 +322,6 @@ namespace RayTraceProject
                 Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
                 Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
                 Vector3.Normalize(ref ray.Direction, out ray.Direction);
-                if (state.IsKeyDown(Keys.LeftControl))
-                {
-                    int asd = 24356;
-                }
                 Color color;
                 tracer.CastRay(ref ray, out color, 1, null, null, 1.0f);
                 //tracer.CastRay(ray, out color, 1, null);

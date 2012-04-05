@@ -515,6 +515,8 @@ namespace RayTraceProject
                 Material material = result.mesh.MeshMaterial;
                 Vector3 fragmentNormal;
 
+
+                // Calculate intersection normal
                 if (material.InterpolateNormals)
                 {
                     Vector3 n1 = result.triangle.n2 - result.triangle.n1;
@@ -528,6 +530,7 @@ namespace RayTraceProject
                     fragmentNormal = result.triangle.surfaceNormal;
                 }
 
+                // Calculate light
                 Vector3 lightResult = Vector3.Zero;
                 for (int i = 0; i < this.lights.Count; i++)
                 {
@@ -537,26 +540,18 @@ namespace RayTraceProject
                         lightResult += this.lights[i].GetLightForFragment(result.worldPosition, fragmentNormal) * (1.0f - lightAmount);
                     }
                 }
-                //Vector3 lightDir = new Vector3(1, 1, 0);
-                //lightDir.Normalize();
 
-                //float lightIntensity = Vector3.Dot(lightDir, fragmentNormal);
-                //if (lightIntensity < 0.2f)
-                //    lightIntensity = 0.2f;
-
-                //addRayPoints(ray.Position, interpolatedPosition);
+                //addRayPoints(ray.Position, result.worldPosition, Color.White);
 
                 if (iteration < this.MaxReflections)
                 {
-                    //addRayPoints(ray.Position, intersectionPosition.Value);
-                    //addRayPoints(intersectionPosition.Value, intersectionPosition.Value + interpolatedNormal);
                     Ray r = new Ray();
                     r.Position = result.worldPosition;
                     r.Direction = Vector3.Reflect(ray.Direction, fragmentNormal);
                     r.Direction.Normalize();
 
                     //addRayPoints(ray.Position, ray.Position + ray.Direction * 100);
-
+                    
                     Color reflectionColor;
 
                     // If the triangle is part of convex geometry, there is no need to check for collisions for this next ray.
@@ -588,10 +583,6 @@ namespace RayTraceProject
                         surfaceColor.Z = result.triangle.color.Z;
                     }
 
-                    //if(reflectionColor == Color.Black)
-                    //    resultColor = new Color(surfaceColor * lightResult);
-                    //else
-
                     Vector3 colorVector = Vector3.Lerp(reflectionColor.ToVector3(), surfaceColor, 1.0f - material.Reflectiveness) * lightResult;
 
                     if (material.Transparent)
@@ -606,51 +597,58 @@ namespace RayTraceProject
                             // Ray is inside material. Exiting to vacuum.
                             n1 = currentRefIndex;
                             n2 = 1.0f; // Index of vacuum.
-                            theta1 = 1 - Vector3.Dot(-fragmentNormal, -ray.Direction);
+                            theta1 = 1 - Vector3.Dot(fragmentNormal, ray.Direction);
                             //addRayPoints(ray.Position, ray.Position + (ray.Direction * 10), Color.Red);
                             //theta1 = -theta1;
 
                         }
                         else
                         {
-
-
                             n1 = currentRefIndex;
                             n2 = material.RefractionIndex;
+                            
                             theta1 = 1 - Vector3.Dot(fragmentNormal, -ray.Direction);
                         }
 
-                        //} 
-                        ////// SER DET INTE UT SOM EN SKÅLFORMAD LINS? DEN SKA INVERTERAS!
-                        // n1 * sin(vinkel1) = n2 * sin(vinkel2)
-                        // (n1 * sin(vinkel1) / n2 = sin(vinkel2)
-                        // Jag tror inte jag behöver ta sinus av theta1, det är redan en sine.
-                        float theta2 = (float)Math.Asin((n1 * theta1) / n2);
-                        Vector3 refraction;
-                        if (theta1 != 0.0f && theta2 != 0.0f)
-                        {
 
+                            //} 
+                            ////// SER DET INTE UT SOM EN SKÅLFORMAD LINS? DEN SKA INVERTERAS!
+                            // n1 * sin(vinkel1) = n2 * sin(vinkel2)
+                            // (n1 * sin(vinkel1) / n2 = sin(vinkel2)
+                            // Jag tror inte jag behöver ta sinus av theta1, det är redan en sine.
+                            float theta2 = (float)Math.Asin((n1 * theta1) / n2);
+                            Vector3 refraction;
+                            if (float.IsNaN(theta1) || float.IsNaN(theta2))
+                            {
+                                colorVector = Vector3.UnitX;
+                                refraction = ray.Direction;
+                            }
+                            else if (theta1 != 0.0f && theta2 != 0.0f)
+                            {
 
-                            Vector3 rotateAxis = Vector3.Cross(fragmentNormal, ray.Direction);
-                            Matrix rotateMatrix = Matrix.CreateFromAxisAngle(rotateAxis, theta2);
-                            refraction = Vector3.Transform(-fragmentNormal, rotateMatrix);
+                                //addRayPoints(ray.Position, result.worldPosition, new Color(1, 0, 0));
+                                Vector3 rotateAxis = Vector3.Cross(fragmentNormal, ray.Direction);
+                                //addRayPoints(result.worldPosition, result.worldPosition + rotateAxis, Color.Red);
+                                //addRayPoints(result.worldPosition, result.worldPosition + fragmentNormal, Color.Green);
+                                Matrix rotateMatrix = Matrix.CreateFromAxisAngle(rotateAxis, theta2);
+                                refraction = Vector3.Transform(-fragmentNormal, rotateMatrix);
 
-                        }
-                        else
-                        {
-                            refraction = ray.Direction;
-                        }
-                        ray.Position = result.worldPosition;
-                        ray.Direction = refraction;
-                        ray.Direction.Normalize();
-
+                            }
+                            else
+                            {
+                                refraction = ray.Direction;
+                            }
+                            ray.Position = result.worldPosition;
+                            ray.Direction = refraction;
+                            ray.Direction.Normalize();
+                        
 
                         //addRayPoints(result.worldPosition, (refraction * 1000), new Color(red, red, red));
                         //red = (red + (255 / 2)) % 255;
                         Color refractColor;
 
                         this.CastRay(ref ray, out refractColor, iteration + 1, result.triangle, null, n2);
-
+                        //addRayPoints(ray.Position, ray.Direction * 100, new Color(0, theta1, theta2));
                         colorVector = Vector3.Lerp(refractColor.ToVector3(), colorVector, result.triangle.color.W);
 
                     }
