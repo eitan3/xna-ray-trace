@@ -358,10 +358,6 @@ namespace RayTraceProject.Spatial
                         {
                             if (sceneObject.Meshes[meshIndex].RayIntersects(ref transformedRay))
                             {
-                                if (sceneObject.Name == "Chess")
-                                {
-                                    int fdf = 5;
-                                }
                                 Triangle[] triangles = sceneObject.Meshes[meshIndex].Triangles;
                                 // Backface culling IF first triangle (and thus the rest) is transparent. Rewrite this in the future.
                                 if (sceneObject.Meshes[meshIndex].MeshMaterial.Transparent)
