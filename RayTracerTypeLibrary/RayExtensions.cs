@@ -9,6 +9,7 @@ namespace RayTracerTypeLibrary
 {
     public static class RayExtensions
     {
+        // Temporarily removed to ignore backfaces when working on refraction.
         public static bool IntersectsTriangle(this Ray ray, Triangle triangle, out float u, out float v, out float distance)
         {
             u = v = distance = 0;
