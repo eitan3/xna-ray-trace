@@ -97,7 +97,7 @@ namespace RayTraceProject
             Model planeModel = Content.Load<Model>("Ground");
             Model androidModel = Content.Load<Model>("SonyLogo");
             Model coffeeModel = Content.Load<Model>("coffeepot");
-            Model sphereModel = Content.Load<Model>("Sphere");
+            Model sphereModel = Content.Load<Model>("prism2");
             Model crateModel = Content.Load<Model>("Crate_Fragile");
             //Model cubeModel = Content.Load<Model>("cube");
             Model monkeyModel = Content.Load<Model>("monkey");
@@ -111,7 +111,7 @@ namespace RayTraceProject
             
             
 
-            plane = new SceneObject(GraphicsDevice, planeModel, Vector3.Zero, new Vector3(MathHelper.PiOver2, 0, 0));
+            plane = new SceneObject(GraphicsDevice, planeModel, new Vector3(0, 0, 4), new Vector3(MathHelper.PiOver2, 0, 0));
             plane.Name = "Ground";
 
 
@@ -156,7 +156,7 @@ namespace RayTraceProject
 
             light = new SpotLight();
             light.Color = Vector3.One;
-            light.Position = (new Vector3(0, 20, 10));
+            light.Position = (new Vector3(0, 5, 20));
             light.Direction = -Vector3.Normalize(light.Position);
             light.SpotAngle = MathHelper.PiOver2;
             light.Intensity = 1f;
@@ -313,8 +313,8 @@ namespace RayTraceProject
 
                 Vector3 screenSpaceCoord;
                 Ray ray;
-                screenSpaceCoord.X = mouseState.X;
-                screenSpaceCoord.Y = mouseState.Y;
+                screenSpaceCoord.X = GraphicsDevice.Viewport.Width / 2.0f;//mouseState.X;
+                screenSpaceCoord.Y = (GraphicsDevice.Viewport.Height / 2.0f) - 5;//mouseState.Y;
                 screenSpaceCoord.Z = 0;
                 ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
 

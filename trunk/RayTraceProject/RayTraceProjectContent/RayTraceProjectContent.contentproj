@@ -88,7 +88,7 @@
       <Name>Sphere</Name>
       <Importer>FbxImporter</Importer>
       <Processor>TracerModelProcessor</Processor>
-      <ProcessorParameters_DiffuseColor>255, 0, 0, 200</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_DiffuseColor>255, 0, 0, 100</ProcessorParameters_DiffuseColor>
       <ProcessorParameters_RefractionIndex>1.32</ProcessorParameters_RefractionIndex>
       <ProcessorParameters_Scale>2</ProcessorParameters_Scale>
       <ProcessorParameters_Reflectiveness>0.7</ProcessorParameters_Reflectiveness>
@@ -109,6 +109,16 @@
       <Importer>FbxImporter</Importer>
       <Processor>ModelProcessor</Processor>
     </None>
+    <Compile Include="prism2.fbx">
+      <Name>prism2</Name>
+      <Importer>FbxImporter</Importer>
+      <Processor>TracerModelProcessor</Processor>
+      <ProcessorParameters_RotationX>-90</ProcessorParameters_RotationX>
+      <ProcessorParameters_DiffuseColor>255, 255, 255, 100</ProcessorParameters_DiffuseColor>
+      <ProcessorParameters_RefractionIndex>1.32</ProcessorParameters_RefractionIndex>
+      <ProcessorParameters_Transparent>True</ProcessorParameters_Transparent>
+      <ProcessorParameters_InterpolateNormals>False</ProcessorParameters_InterpolateNormals>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="plane.fbx">
@@ -117,7 +127,7 @@
       <Processor>TracerModelProcessor</Processor>
       <ProcessorParameters_TextureFilePath>C:\Projects\textures\smiley.bmp</ProcessorParameters_TextureFilePath>
       <ProcessorParameters_UseTexture>True</ProcessorParameters_UseTexture>
-      <ProcessorParameters_Scale>10</ProcessorParameters_Scale>
+      <ProcessorParameters_Scale>3</ProcessorParameters_Scale>
       <ProcessorParameters_RefractionIndex>1.32</ProcessorParameters_RefractionIndex>
       <ProcessorParameters_InterpolateNormals>False</ProcessorParameters_InterpolateNormals>
       <ProcessorParameters_DiffuseColor>255, 255, 255, 255</ProcessorParameters_DiffuseColor>

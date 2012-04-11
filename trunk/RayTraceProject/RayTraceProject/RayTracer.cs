@@ -96,7 +96,7 @@ namespace RayTraceProject
                     processors++;
             } while (mask != highbit);
 
-            return 1;
+            //            return 1;
             return processors;
         }
 
@@ -542,7 +542,7 @@ namespace RayTraceProject
                     }
                 }
 
-                //addRayPoints(ray.Position, result.worldPosition, Color.White);
+                addRayPoints(ray.Position, result.worldPosition, Color.White);
 
                 if (iteration < this.MaxReflections)
                 {
