@@ -22,23 +22,21 @@ namespace RayTraceProject
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         RasterizerState solidRasterState, wireRasterState;
-        bool useWireframe = false;
+        bool useWireframe = true;
         SpriteFont onScreenFont;
         KeyboardState lastState;
         MouseState lastMouse;
-        Vector2 lastMouseCoord;
+        SceneObject prism;
+        Matrix staticProj, staticView;
+        SpotLight light;
 
         Spatial.OctreeSpatialManager scene;
         Camera camera;
-        SceneObject crate, crate2;
-        SceneObject android;
         RenderTarget2D rayTraceTarget;
         RayTracer tracer;
         SceneObject plane;
         Stopwatch rayTraceWatch;
         private string folder;
-
-        private Model coneModel;
 
         public Game1()
         {
@@ -46,9 +44,6 @@ namespace RayTraceProject
             graphics.PreferredBackBufferWidth = 512;
             graphics.PreferredBackBufferHeight = 512;
             Content.RootDirectory = "Content";
-            Vector3 v1 = new Vector3(0, 0, 1);
-            Vector3 v2 = new Vector3(-0.0076134061f, -0.22078878f, -0.97529179f);
-            float dot = Vector3.Dot(v1, v2);
             this.IsMouseVisible = true;
         }
 
@@ -68,17 +63,6 @@ namespace RayTraceProject
             this.wireRasterState.CullMode = CullMode.CullCounterClockwiseFace;
             this.wireRasterState.FillMode = FillMode.WireFrame;
 
-            Plane p = new Plane(new Vector3(0, 1, 0), -50);
-            p.Normal.Normalize();
-
-            Vector3 point = new Vector3(0, 51, 0);
-
-            float dot = p.DotCoordinate(point);
-
-            Vector3 planeCenter = -p.D * p.Normal;
-
-            float dot2 = Vector3.Dot(Vector3.Normalize(point - planeCenter), p.Normal);
-
             base.Initialize();
         }
 
@@ -95,50 +79,34 @@ namespace RayTraceProject
             this.onScreenFont = Content.Load<SpriteFont>("Fonts\\OnScreenFont");
 
             Model planeModel = Content.Load<Model>("Ground");
-            Model androidModel = Content.Load<Model>("SonyLogo");
-            Model coffeeModel = Content.Load<Model>("coffeepot");
             Model sphereModel = Content.Load<Model>("prism2");
-            Model crateModel = Content.Load<Model>("Crate_Fragile");
-            //Model cubeModel = Content.Load<Model>("cube");
-            Model monkeyModel = Content.Load<Model>("monkey");
-            Model torusModel = Content.Load<Model>("torus");
-            Model matModel = Content.Load<Model>("mat");
-            Model chessModel = Content.Load<Model>("chesspiece");
-            Model wossyModel = Content.Load<Model>("wossy");
-            Model mehModel = Content.Load<Model>("meh");
-           // Model chessboardModel = Content.Load<Model>("chessboard");
-
-            
-            
 
             plane = new SceneObject(GraphicsDevice, planeModel, new Vector3(0, 0, 4), new Vector3(MathHelper.PiOver2, 0, 0));
             plane.Name = "Ground";
 
+            // Uncomment this for video functionality
+            //////this.folder = System.IO.Path.Combine(@"D:\Videos", string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
 
-
-            //android = new SceneObject(androidModel, new Vector3(0, 8, 0), Vector3.Zero);
-            //android.Rotation = new Vector3(0, -MathHelper.PiOver2, 0);
-
-            //System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
-            ////////////this.folder = System.IO.Path.Combine(@"D:\Videos", string.Format("Trace{0}", DateTime.Now.ToString("yyMMddHHmmss")));
-
-            ////////////if (!System.IO.Directory.Exists(folder))
-            ////////////{
-            ////////////    System.IO.Directory.CreateDirectory(this.folder);
-            ////////////}
+            //////if (!System.IO.Directory.Exists(folder))
+            //////{
+            //////    System.IO.Directory.CreateDirectory(this.folder);
+            //////}
 
             this.scene = new Spatial.OctreeSpatialManager();
             this.scene.Bodies.Add(plane);
 
-            SceneObject sphere = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 0, 8), new Vector3(0, 0, 0));
-            sphere.Scale = Vector3.One;
-            sphere.Name = "Sphere";
-            scene.Bodies.Add(sphere);
+            prism = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 0, 8), new Vector3(0, 0, 0));
+            prism.Scale = Vector3.One;
+            prism.Name = "Sphere";
+            scene.Bodies.Add(prism);
 
             this.scene.Build();
 
-            //this.camera = new Camera(new Vector3(22, 27, 58), new Vector3(0, 0, 0), Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 0.1f, 1000);
-            this.camera = new Camera(new Vector3(0, 0, 16), sphere.Position, Vector3.Up, 1.57f, GraphicsDevice.Viewport.AspectRatio, 1.0f, 1000.0f);
+            this.camera = new Camera(new Vector3(0, 0, 16), prism.Position, Vector3.Up, 1.57f, GraphicsDevice.Viewport.AspectRatio, 1.0f, 1000.0f);
+
+            // staticProj and staticView is used for debugging purposes when working on refractions
+            staticProj = camera.Projection;
+            staticView = camera.View;
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
@@ -164,15 +132,12 @@ namespace RayTraceProject
 
             // TODO: use this.Content to load your game content here
         }
-        SpotLight light;
-        SceneObject[] sphereRow1 = new SceneObject[5];
-        SceneObject[] sphereRow2 = new SceneObject[4];
-        SceneObject meh;
+        
+        // Used for video functionality
         bool finished = false;
         bool videocompiled = false;
         bool nextframe = true;
         int frame = 0;
-        
         float rot_step = MathHelper.TwoPi / 360.0f;
         float rot_spaceRow1 = MathHelper.TwoPi / 5.0f;
         float rot_spaceRow2 = MathHelper.TwoPi / 4.0f;
@@ -306,25 +271,52 @@ namespace RayTraceProject
             if (state.IsKeyUp(Keys.Space) && lastState.IsKeyDown(Keys.Space) && !tracer.IsBusy)
                 showRayTraceImage = !showRayTraceImage;
 
-            
-            MouseState mouseState = Mouse.GetState();
-            if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
+            if (state.IsKeyUp(Keys.N) && lastState.IsKeyDown(Keys.N))
             {
-
+                prism.Rotation += new Vector3(0, 0.02f, 0);
+            }
+            if (state.IsKeyUp(Keys.M) && lastState.IsKeyDown(Keys.M))
+            {
+                prism.Rotation -= new Vector3(0, 0.02f, 0);
+            }
+            MouseState mouseState = Mouse.GetState();
+            ticker += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+            if (ticker >= 80)
+            {
+                ticker -= 80;
+                tracer.points.Clear();
                 Vector3 screenSpaceCoord;
                 Ray ray;
                 screenSpaceCoord.X = GraphicsDevice.Viewport.Width / 2.0f;//mouseState.X;
                 screenSpaceCoord.Y = (GraphicsDevice.Viewport.Height / 2.0f) - 5;//mouseState.Y;
                 screenSpaceCoord.Z = 0;
-                ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+                ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, staticProj, staticView, Matrix.Identity);
 
                 screenSpaceCoord.Z = 1;
-                Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+                Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, staticProj, staticView, Matrix.Identity);
                 Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
                 Vector3.Normalize(ref ray.Direction, out ray.Direction);
                 Color color;
                 tracer.CastRay(ref ray, out color, 1, null, null, 1.0f);
                 //tracer.CastRay(ray, out color, 1, null);
+            }
+            if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
+            {
+                //tracer.points.Clear();
+                //Vector3 screenSpaceCoord;
+                //Ray ray;
+                //screenSpaceCoord.X = GraphicsDevice.Viewport.Width / 2.0f;//mouseState.X;
+                //screenSpaceCoord.Y = (GraphicsDevice.Viewport.Height / 2.0f) - 5;//mouseState.Y;
+                //screenSpaceCoord.Z = 0;
+                //ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+
+                //screenSpaceCoord.Z = 1;
+                //Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+                //Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
+                //Vector3.Normalize(ref ray.Direction, out ray.Direction);
+                //Color color;
+                //tracer.CastRay(ref ray, out color, 1, null, null, 1.0f);
+                ////tracer.CastRay(ray, out color, 1, null);
 
             }
 
@@ -368,6 +360,7 @@ namespace RayTraceProject
 
             base.Update(gameTime);
         }
+        float ticker = 0;
         bool showRayTraceImage;
         double progressUpdate;
         float currentProgress;
