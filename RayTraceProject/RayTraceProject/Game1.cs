@@ -107,6 +107,7 @@ namespace RayTraceProject
             // staticProj and staticView is used for debugging purposes when working on refractions
             staticProj = camera.Projection;
             staticView = camera.View;
+            camera.Position = new Vector3(0, 3.0001f, 8.000008f);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
@@ -238,7 +239,7 @@ namespace RayTraceProject
                 translation += new Vector3(-1, 0, 0);
             if (state.IsKeyDown(Keys.D))
                 translation += new Vector3(1, 0, 0);
-            float speedFactor = 1.0f;
+            float speedFactor = 0.2f;
             if (state.IsKeyDown(Keys.D1) && lastState.IsKeyUp(Keys.D1))
                 this.useWireframe = !this.useWireframe;
             if (state.IsKeyDown(Keys.Back))
