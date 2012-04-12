@@ -659,29 +659,36 @@ namespace RayTraceProject
 
                         if (currentRefIndex == material.RefractionIndex)
                         {
-                            n1 = currentRefIndex;
-                            n2 = 1.0f;
+                            n1 = 1.0f;
+                            n2 = currentRefIndex;
                         }
                         else
                         {
-                            n1 = 1.0f;
-                            n2 = material.RefractionIndex;
+                            n1 = material.RefractionIndex;
+                            n2 = 1.0f;
                         }
 
+                        //n1 = 0.9f;
+                        //n2 = 1.0f;
+
+                        //ray.Direction = new Vector3(0.707107f, -0.707107f, 0);
+                        //fragmentNormal = new Vector3(0, 1, 0);
+
                         float cos1 = Vector3.Dot(fragmentNormal, -ray.Direction);
-                        float theta1 = (float)Math.Acos(cos1);
                         float cos2 = (float)Math.Sqrt(1 - Math.Pow(n1 / n2, 2.0) * (1 - Math.Pow(cos1, 2.0)));
+                        float theta1 = (float)Math.Acos(cos1);
+                        
                         float theta2 = (float)Math.Acos(cos2);
 
 
                         Vector3 refract;
                         if (cos1 >= 0)
                         {
-                            refract = (n1 / 2) * ray.Direction + ((n1 / n2) * cos1 - cos2) * fragmentNormal;
+                            refract = (n1 / n2) * ray.Direction + ((n1 / n2) * cos1 - cos2) * fragmentNormal;
                         }
                         else
                         {
-                            refract = (n1 / 2) * ray.Direction - ((n1 / n2) * cos1 - cos2) * fragmentNormal;
+                            refract = (n1 / n2) * ray.Direction - ((n1 / n2) * cos1 - cos2) * fragmentNormal;
                         }
 
                         ray.Position = result.worldPosition;
