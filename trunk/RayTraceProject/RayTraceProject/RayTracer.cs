@@ -96,7 +96,7 @@ namespace RayTraceProject
                     processors++;
             } while (mask != highbit);
 
-            //            return 1;
+                        return 1;
             return processors;
         }
 
@@ -174,7 +174,6 @@ namespace RayTraceProject
             Matrix view = CurrentCamera.View;
             Matrix proj = CurrentCamera.Projection;
             Viewport viewport = GraphicsDevice.Viewport;
-            Ray ray;
 
             while (!finished)
             {
@@ -486,7 +485,7 @@ namespace RayTraceProject
             if (CurrentScene.GetRayIntersection(ref shadowRay, out intersectionResult, result.triangle, null) && intersectionResult.Value.d < distanceToLight)
             {
                 Spatial.IntersectionResult res = intersectionResult.Value;
-                Material material = result.mesh.MeshMaterial;
+                Material material = res.mesh.MeshMaterial;
                 if (material.Transparent)
                 {
                     return res.triangle.color.W;
@@ -541,7 +540,6 @@ namespace RayTraceProject
                         lightResult += this.lights[i].GetLightForFragment(result.worldPosition, fragmentNormal) * (1.0f - lightAmount);
                     }
                 }
-
                 addRayPoints(ray.Position, result.worldPosition, Color.White);
 
                 if (iteration < this.MaxReflections)
