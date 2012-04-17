@@ -129,6 +129,7 @@ namespace RayTraceProject
             for (int i = 0; i < this.meshes.Count; i++)
             {
                 this.boundingBox = BoundingBox.CreateMerged(this.boundingBox, this.meshes[i].MeshBoundingBox);
+                this.meshes[i].Init();
                 this.meshes[i].MeshMaterial.Init();
             }
 

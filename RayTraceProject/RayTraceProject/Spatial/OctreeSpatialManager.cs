@@ -47,7 +47,7 @@ namespace RayTraceProject.Spatial
 #endif
         }
         private CubeNode root;
-        private int itemTreshold = 1;
+        private int itemTreshold = 100;
         private List<ISpatialBody> objects;
         private uint depth;
 
@@ -65,7 +65,7 @@ namespace RayTraceProject.Spatial
         {
             this.depth = 0;
             BoundingBox box = new BoundingBox(Vector3.Zero, Vector3.Zero);
-            
+
 
             this.root = new CubeNode();
             root.id = 0;
@@ -93,64 +93,15 @@ namespace RayTraceProject.Spatial
 
         private void BuildTree(ref CubeNode parent)
         {
-            // Add all items to current depth
             if (parent.containingObjects.Count > this.itemTreshold)
             {
                 this.depth++;
                 this.SplitCuboid(parent);
-                //this.SplitCubeoid(ref parent.bounds, ref childrenBounds);
 
-
-                //for (int i = parent.containingObjects.Count - 1; i >= 0; i--)
-                //{
-                //    BoundingBox transformedBox = parent.containingObjects[i].BoundingBox;
-                //    Matrix world = (parent.containingObjects[i] as SceneObject).World;
-                //    Vector3.Transform(ref transformedBox.Min, ref world, out transformedBox.Min);
-                //    Vector3.Transform(ref transformedBox.Max, ref world, out transformedBox.Max);
-
-                //    BoundingBox objectBox = new BoundingBox(
-                //        Vector3.Min(transformedBox.Min, transformedBox.Max),
-                //        Vector3.Max(transformedBox.Min, transformedBox.Max));
-
-                //    minPosition = objectBox.Min;
-                //    maxPosition = objectBox.Max;
-                //    minParent = this.InsertLeaf(parent, ref minPosition);
-                //    maxParent = this.InsertLeaf(parent, ref maxPosition);
-
-                //    // If the two parents are identical, the entire bounding box is enclosed in the node.
-                //    if (minParent.id == maxParent.id)
-                //    {
-                //        minParent.containingObjects.Add(parent.containingObjects[i]);
-                //        parent.containingObjects.RemoveAt(i);
-                //    }
-                //    else
-                //    {
-                //        CubeNode commonParent = FindCommonParent(minParent, minParent, maxParent);
-                //        if (commonParent == null)
-                //            throw new InvalidOperationException("Could not find common parent!");
-
-                //        commonParent.containingObjects.Add(parent.containingObjects[i]);
-                //        parent.containingObjects.RemoveAt(i);
-                //    }
-                //}
                 for (int i = 0; i < 8; i++)
                 {
                     BuildTree(ref parent.children[i]);
                 }
-                //for (int i = 0; i < 8; i++)
-                //{
-                //    parent.children[i].bounds = childrenBounds[i];
-                //    parent.children[i].containingObjects = new List<ISpatialBody>();
-                //   for (int j = 0; j < parent.containingObjects.Count; j++)
-                //    {
-                //        parent.containingObjects[i].BoundingBox.Intersects(ref parent.children[i].bounds, out intersects);
-                //        if (intersects)
-                //        {
-                //            parent.children[i].containingObjects.Add(parent.containingObjects[i]);
-                //        }
-                //    }
-                //    this.BuildTree(ref parent.children[i]);
-                //}
             }
         }
 
@@ -309,7 +260,7 @@ namespace RayTraceProject.Spatial
                 }
             }
         }
-        
+
         public void Draw(Camera camera, ref Matrix view, ref Matrix proj, GraphicsDevice device, GameTime gameTime)
         {
             this.DrawNode(camera, ref view, ref proj, this.root, device, gameTime);
@@ -355,13 +306,13 @@ namespace RayTraceProject.Spatial
         {
             result = null;
 
-            List<KeyValuePair<float, CubeNode>> cubeoids = new List<KeyValuePair<float, CubeNode>>();
+            SortedList<float, List<CubeNode>> cubeoids = new SortedList<float, List<CubeNode>>();
             //SortedDictionary<float, CubeNode> cubeoids = new SortedDictionary<float, CubeNode>();
             this.GetRayCubeNodeIntersections(ref ray, this.root, cubeoids);
             if (cubeoids.Count == 0)
                 return false;
 
-            //List<CubeNode> intersectedCubeoids = cubeoids.Values.ToList();
+            List<List<CubeNode>> intersectedCubeoids = cubeoids.Values.ToList();
 
             int cubeoidIndex = 0;
 
@@ -369,105 +320,127 @@ namespace RayTraceProject.Spatial
             float intersectionU = 0;
             float intersectionV = 0;
             Triangle intersectedTriangle = null;
+            Vector3 intersectedObjectSpacePosition = Vector3.Zero;
             bool intersectionFound = false;
             Mesh intersectedMesh = null;
             SceneObject intersectedSceneObject = null;
+            RayTracerTypeLibrary.MeshOctree.TriangleIntersectionResult? triangleResult;
 
             Vector3 v1, v2, rayDirPosition;
             while (!intersectionFound && cubeoidIndex < cubeoids.Count)
             {
-                List<ISpatialBody> objects = cubeoids[cubeoidIndex++].Value.containingObjects;
-                for (int i = 0; i < objects.Count; i++)
+                List<CubeNode> cuboidGroup = intersectedCubeoids[cubeoidIndex++];
+                for (int k = 0; k < cuboidGroup.Count; k++)
                 {
-                    if (ignoreObject == null || ignoreObject != objects[i])
+                    List<ISpatialBody> objects = cuboidGroup[k].containingObjects;
+
+                    for (int i = 0; i < objects.Count; i++)
                     {
-                        
-                        
-                        SceneObject sceneObject = (SceneObject)objects[i];
-
-                        Matrix inverseWorld = sceneObject.InverseWorld;
-                        // -- While the below LOOKS like it should work, it does not. Correct solution below!
-                        //Ray transformedRay;
-                        //Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
-                        //Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
-                        //transformedRay.Direction.Normalize();
-
-                        //Vector3 v1 = Vector3.Transform(ray.Position, inverseWorld);
-                        //Vector3 v2 = Vector3.Transform(ray.Position + ray.Direction, inverseWorld);
-                        Vector3.Add(ref ray.Position, ref ray.Direction, out rayDirPosition);
-
-                        Vector3.Transform(ref ray.Position, ref inverseWorld, out v1);
-                        Vector3.Transform(ref rayDirPosition, ref inverseWorld, out v2);
-                        Vector3.Subtract(ref v2, ref v1, out rayDirPosition);
-                        Ray transformedRay = new Ray(v1, rayDirPosition);
-                        transformedRay.Direction.Normalize();
-
-                        for (int meshIndex = 0; meshIndex < sceneObject.Meshes.Count; meshIndex++)
+                        if (ignoreObject == null || ignoreObject != objects[i])
                         {
-                            if (sceneObject.Meshes[meshIndex].RayIntersects(ref transformedRay))
+
+
+                            SceneObject sceneObject = (SceneObject)objects[i];
+
+                            Matrix inverseWorld = sceneObject.InverseWorld;
+                            // -- While the below LOOKS like it should work, it does not. Correct solution below!
+                            //Ray transformedRay;
+                            //Vector3.Transform(ref ray.Position, ref inverseWorld, out transformedRay.Position);
+                            //Vector3.Transform(ref ray.Direction, ref inverseWorld, out transformedRay.Direction);
+                            //transformedRay.Direction.Normalize();
+
+                            //Vector3 v1 = Vector3.Transform(ray.Position, inverseWorld);
+                            //Vector3 v2 = Vector3.Transform(ray.Position + ray.Direction, inverseWorld);
+                            Vector3.Add(ref ray.Position, ref ray.Direction, out rayDirPosition);
+
+                            Vector3.Transform(ref ray.Position, ref inverseWorld, out v1);
+                            Vector3.Transform(ref rayDirPosition, ref inverseWorld, out v2);
+                            Vector3.Subtract(ref v2, ref v1, out rayDirPosition);
+                            Ray transformedRay = new Ray(v1, rayDirPosition);
+                            transformedRay.Direction.Normalize();
+
+                            for (int meshIndex = 0; meshIndex < sceneObject.Meshes.Count; meshIndex++)
                             {
-                                Triangle[] triangles = sceneObject.Meshes[meshIndex].Triangles;
-                                // Backface culling IF first triangle (and thus the rest) is transparent. Rewrite this in the future.
-                                if (sceneObject.Meshes[meshIndex].MeshMaterial.Transparent)
+                                if (sceneObject.Meshes[meshIndex].RayIntersects(ref transformedRay))
                                 {
-                                    for (int j = 0; j < triangles.Length; j++)
+                                    if (sceneObject.Meshes[meshIndex].Octree.GetRayIntersection(ref transformedRay, out triangleResult, ignoreTriangle) &&
+                                        triangleResult.Value.d < minDistance)
                                     {
-                                        if (ignoreTriangle == null || ignoreTriangle != triangles[j])
-                                        {
-                                            float currentU, currentV, distance;
-                                            if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) &&
-                                                distance < minDistance)
-                                            {
-                                                minDistance = distance;
-                                                intersectionU = currentU;
-                                                intersectionV = currentV;
-                                                intersectedTriangle = triangles[j];
-                                                intersectedMesh = sceneObject.Meshes[meshIndex];
-                                                intersectedSceneObject = sceneObject;
-                                                // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
-                                                intersectionFound = true;
-                                            }
-                                        }
+                                        minDistance = triangleResult.Value.d;
+                                        intersectedTriangle = triangleResult.Value.triangle;
+                                        intersectedObjectSpacePosition = triangleResult.Value.objectSpacePosition;
+                                        intersectedMesh = sceneObject.Meshes[meshIndex];
+                                        intersectedSceneObject = sceneObject;
+                                        // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
+                                        intersectionFound = true;
                                     }
-                                }
-                                else
-                                {
-                                    for (int j = 0; j < triangles.Length; j++)
-                                    {
-                                        if (ignoreTriangle == null || ignoreTriangle != triangles[j])
-                                        {
-                                            float currentU, currentV, distance;
-                                            if (transformedRay.IntersectsTriangleBackfaceCulling(triangles[j], out currentU, out currentV, out distance) &&
-                                                distance < minDistance)
-                                            {
-                                                minDistance = distance;
-                                                intersectionU = currentU;
-                                                intersectionV = currentV;
-                                                intersectedTriangle = triangles[j];
-                                                intersectedMesh = sceneObject.Meshes[meshIndex];
-                                                intersectedSceneObject = sceneObject;
-                                                // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
-                                                intersectionFound = true;
-                                            }
-                                        }
-                                    }
-                                }
+                                    
+                                    //Triangle[] triangles = sceneObject.Meshes[meshIndex].Triangles;
+                                    //// Backface culling IF first triangle (and thus the rest) is transparent. Rewrite this in the future.
+                                    //if (sceneObject.Meshes[meshIndex].MeshMaterial.Transparent)
+                                    //{
+                                    //    for (int j = 0; j < triangles.Length; j++)
+                                    //    {
+                                    //        if (ignoreTriangle == null || ignoreTriangle != triangles[j])
+                                    //        {
+                                    //            float currentU, currentV, distance;
+                                    //            if (transformedRay.IntersectsTriangle(triangles[j], out currentU, out currentV, out distance) &&
+                                    //                distance < minDistance)
+                                    //            {
+                                    //                minDistance = distance;
+                                    //                intersectionU = currentU;
+                                    //                intersectionV = currentV;
+                                    //                intersectedTriangle = triangles[j];
+                                    //                intersectedMesh = sceneObject.Meshes[meshIndex];
+                                    //                intersectedSceneObject = sceneObject;
+                                    //                // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
+                                    //                intersectionFound = true;
+                                    //            }
+                                    //        }
+                                    //    }
+                                    //}
+                                    //else
+                                    //{
+                                    //    for (int j = 0; j < triangles.Length; j++)
+                                    //    {
+                                    //        if (ignoreTriangle == null || ignoreTriangle != triangles[j])
+                                    //        {
+                                    //            float currentU, currentV, distance;
+                                    //            if (transformedRay.IntersectsTriangleBackfaceCulling(triangles[j], out currentU, out currentV, out distance) &&
+                                    //                distance < minDistance)
+                                    //            {
+                                    //                minDistance = distance;
+                                    //                intersectionU = currentU;
+                                    //                intersectionV = currentV;
+                                    //                intersectedTriangle = triangles[j];
+                                    //                intersectedMesh = sceneObject.Meshes[meshIndex];
+                                    //                intersectedSceneObject = sceneObject;
+                                    //                // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
+                                    //                intersectionFound = true;
+                                    //            }
+                                    //        }
+                                    //    }
+                                    //}
 
+                                }
                             }
+
+
                         }
-
-
                     }
                 }
+
+
             }
 
             if (intersectionFound)
             {
-                Vector3 p1 = intersectedTriangle.v2 - intersectedTriangle.v1;
-                Vector3 p2 = intersectedTriangle.v3 - intersectedTriangle.v1;
-                Vector3 interpolatedPosition = intersectedTriangle.v1 + (p1 * intersectionU) + (p2 * intersectionV);
+                //Vector3 p1 = intersectedTriangle.v2 - intersectedTriangle.v1;
+                //Vector3 p2 = intersectedTriangle.v3 - intersectedTriangle.v1;
+                //Vector3 interpolatedPosition = intersectedTriangle.v1 + (p1 * intersectionU) + (p2 * intersectionV);
+                Vector3 interpolatedPosition;
                 Matrix world = intersectedSceneObject.World;
-                Vector3.Transform(ref interpolatedPosition, ref world, out interpolatedPosition);
+                Vector3.Transform(ref intersectedObjectSpacePosition, ref world, out interpolatedPosition);
 
                 result = new IntersectionResult(
                     intersectedMesh,
@@ -481,7 +454,7 @@ namespace RayTraceProject.Spatial
             return intersectionFound;
         }
 
-        private void GetRayCubeNodeIntersections(ref Ray ray, CubeNode current, List<KeyValuePair<float, CubeNode>> cuboids) //SortedDictionary<float, CubeNode>
+        private void GetRayCubeNodeIntersections(ref Ray ray, CubeNode current, SortedList<float, List<CubeNode>> cuboids) //SortedDictionary<float, CubeNode>
         {
             float? result;
             current.bounds.Intersects(ref ray, out result);
@@ -496,47 +469,18 @@ namespace RayTraceProject.Spatial
                 }
                 else
                 {
-                    // Insert cuboid in result list, using binary search to keep list sorted.
-                    if (cuboids.Count > 0)
+                    if (cuboids.ContainsKey(result.Value))
                     {
-                        int maxIndex = cuboids.Count;
-                        int minIndex = 0;
-                        int midIndex = 0;
-                        bool inserted = false;
-
-                        while (maxIndex >= minIndex && !inserted)
-                        {
-                            midIndex = (minIndex + maxIndex) / 2;
-
-                            if (cuboids[midIndex].Key < result.Value)
-                            {
-                                minIndex = midIndex + 1;
-                            }
-                            else if (cuboids[midIndex].Key > result.Value)
-                            {
-                                maxIndex = midIndex - 1;
-                            }
-                            else
-                            {
-                                cuboids.Insert(midIndex, new KeyValuePair<float, CubeNode>(result.Value, current));
-                                inserted = true;
-                            }
-                        }
-                        if (!inserted)
-                        {
-                            cuboids.Insert(midIndex, new KeyValuePair<float, CubeNode>(result.Value, current));
-                        }
+                        cuboids[result.Value].Add(current);
                     }
                     else
                     {
-                        cuboids.Add(new KeyValuePair<float, CubeNode>(result.Value, current));
+                        cuboids.Add(result.Value, new List<CubeNode>() { current });
                     }
-
-                    //cuboids.Add(new KeyValuePair<float, CubeNode>(result.Value, current)); // result.Value
                 }
             }
         }
 
-        
+
     }
 }

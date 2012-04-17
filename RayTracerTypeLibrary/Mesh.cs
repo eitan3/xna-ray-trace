@@ -8,6 +8,7 @@ namespace RayTracerTypeLibrary
 {
     public class Mesh
     {
+        public MeshOctree Octree { get; private set; }
         public Triangle[] Triangles { get; set; }
         public Material MeshMaterial { get; set; }
         public BoundingBox MeshBoundingBox { get; set; }
@@ -21,6 +22,13 @@ namespace RayTracerTypeLibrary
             this.Triangles = triangles;
             this.MeshMaterial = material;
             this.MeshBoundingBox = boundingBox;
+        }
+
+        public void Init()
+        {
+            this.Octree = new MeshOctree();
+            this.Octree.Bodies.AddRange(this.Triangles);
+            this.Octree.Build();
         }
 
         public bool RayIntersects(ref Ray ray)
