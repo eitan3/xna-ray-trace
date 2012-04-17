@@ -47,7 +47,7 @@ namespace RayTraceProject.Spatial
 #endif
         }
         private CubeNode root;
-        private int itemTreshold = 50;
+        private int itemTreshold = 1;
         private List<ISpatialBody> objects;
         private uint depth;
 
@@ -74,6 +74,7 @@ namespace RayTraceProject.Spatial
             root.children = null;
             for (int i = 0; i < this.objects.Count; i++)
             {
+                //BoundingBox worldBox = this.objects[i].WorldBoundingBox;
                 BoundingBox transformedBox = this.objects[i].BoundingBox;
                 Matrix world = (this.objects[i] as SceneObject).World;
                 Vector3.Transform(ref transformedBox.Min, ref world, out transformedBox.Min);
@@ -92,48 +93,46 @@ namespace RayTraceProject.Spatial
 
         private void BuildTree(ref CubeNode parent)
         {
+            // Add all items to current depth
             if (parent.containingObjects.Count > this.itemTreshold)
             {
                 this.depth++;
-                BoundingBox[] childrenBounds = new BoundingBox[8];
-                parent.children = new CubeNode[8];
-                this.SplitCubeoid(ref parent.bounds, ref childrenBounds);
-                for (uint i = 0; i < 8; i++)
-                {
-                    parent.children[i] = new CubeNode();
-                    parent.children[i].parent = parent;
-                    parent.children[i].id = parent.id + i + 1;
-                    parent.children[i].bounds = childrenBounds[i];
-                    parent.children[i].depth = this.depth;
-                    parent.children[i].containingObjects = new List<ISpatialBody>();
-                }
+                this.SplitCuboid(parent);
+                //this.SplitCubeoid(ref parent.bounds, ref childrenBounds);
 
-                CubeNode minParent, maxParent;
-                Vector3 minPosition, maxPosition;
 
-                for (int i = parent.containingObjects.Count - 1; i >= 0; i--)
-                {
-                    minPosition = parent.containingObjects[i].BoundingBox.Min;
-                    maxPosition = parent.containingObjects[i].BoundingBox.Max;
-                    minParent = this.InsertLeaf(parent, ref minPosition);
-                    maxParent = this.InsertLeaf(parent, ref maxPosition);
+                //for (int i = parent.containingObjects.Count - 1; i >= 0; i--)
+                //{
+                //    BoundingBox transformedBox = parent.containingObjects[i].BoundingBox;
+                //    Matrix world = (parent.containingObjects[i] as SceneObject).World;
+                //    Vector3.Transform(ref transformedBox.Min, ref world, out transformedBox.Min);
+                //    Vector3.Transform(ref transformedBox.Max, ref world, out transformedBox.Max);
 
-                    // If the two parents are identical, the entire bounding box is enclosed in the node.
-                    if (minParent.id == maxParent.id)
-                    {
-                        minParent.containingObjects.Add(parent.containingObjects[i]);
-                        parent.containingObjects.RemoveAt(i);
-                    }
-                    else
-                    {
-                        CubeNode commonParent = FindCommonParent(minParent, minParent, maxParent);
-                        if (commonParent == null)
-                            throw new InvalidOperationException("Could not find common parent!");
+                //    BoundingBox objectBox = new BoundingBox(
+                //        Vector3.Min(transformedBox.Min, transformedBox.Max),
+                //        Vector3.Max(transformedBox.Min, transformedBox.Max));
 
-                        commonParent.containingObjects.Add(parent.containingObjects[i]);
-                        parent.containingObjects.RemoveAt(i);
-                    }
-                }
+                //    minPosition = objectBox.Min;
+                //    maxPosition = objectBox.Max;
+                //    minParent = this.InsertLeaf(parent, ref minPosition);
+                //    maxParent = this.InsertLeaf(parent, ref maxPosition);
+
+                //    // If the two parents are identical, the entire bounding box is enclosed in the node.
+                //    if (minParent.id == maxParent.id)
+                //    {
+                //        minParent.containingObjects.Add(parent.containingObjects[i]);
+                //        parent.containingObjects.RemoveAt(i);
+                //    }
+                //    else
+                //    {
+                //        CubeNode commonParent = FindCommonParent(minParent, minParent, maxParent);
+                //        if (commonParent == null)
+                //            throw new InvalidOperationException("Could not find common parent!");
+
+                //        commonParent.containingObjects.Add(parent.containingObjects[i]);
+                //        parent.containingObjects.RemoveAt(i);
+                //    }
+                //}
                 for (int i = 0; i < 8; i++)
                 {
                     BuildTree(ref parent.children[i]);
@@ -152,6 +151,22 @@ namespace RayTraceProject.Spatial
                 //    }
                 //    this.BuildTree(ref parent.children[i]);
                 //}
+            }
+        }
+
+        private void AddBody(ISpatialBody body, CubeNode node)
+        {
+            if (node.bounds.Intersects(body.WorldBoundingBox))
+            {
+                node.containingObjects.Add(body);
+
+                if (node.children != null)
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        AddBody(body, node.children[i]);
+                    }
+                }
             }
         }
 
@@ -242,6 +257,38 @@ namespace RayTraceProject.Spatial
             }
         }
 
+        private void SplitCuboid(CubeNode parent)
+        {
+            Vector3 cubePosition;
+            Vector3 cubeSize = (parent.bounds.Max - parent.bounds.Min) / 2f;
+            parent.children = new CubeNode[8];
+            uint index = 0;
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    for (int k = 0; k < 2; k++)
+                    {
+                        CubeNode child = new CubeNode();
+                        cubePosition = parent.bounds.Min + new Vector3(cubeSize.X * i, cubeSize.Y * j, cubeSize.Z * k);
+                        child.bounds = new BoundingBox(cubePosition, cubePosition + cubeSize);
+                        child.parent = parent;
+                        child.id = parent.id + index + 2;
+                        child.containingObjects = new List<ISpatialBody>();
+                        parent.children[index++] = child;
+
+                        for (int objectIndex = 0; objectIndex < parent.containingObjects.Count; objectIndex++)
+                        {
+                            if (parent.containingObjects[objectIndex].WorldBoundingBox.Intersects(child.bounds))
+                            {
+                                child.containingObjects.Add(parent.containingObjects[objectIndex]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         private void SplitCubeoid
             (ref BoundingBox parent,
             ref BoundingBox[] cubes)
@@ -308,12 +355,13 @@ namespace RayTraceProject.Spatial
         {
             result = null;
 
-            SortedDictionary<float, CubeNode> cubeoids = new SortedDictionary<float, CubeNode>();
+            List<KeyValuePair<float, CubeNode>> cubeoids = new List<KeyValuePair<float, CubeNode>>();
+            //SortedDictionary<float, CubeNode> cubeoids = new SortedDictionary<float, CubeNode>();
             this.GetRayCubeNodeIntersections(ref ray, this.root, cubeoids);
             if (cubeoids.Count == 0)
                 return false;
 
-            List<CubeNode> intersectedCubeoids = cubeoids.Values.ToList();
+            //List<CubeNode> intersectedCubeoids = cubeoids.Values.ToList();
 
             int cubeoidIndex = 0;
 
@@ -326,9 +374,9 @@ namespace RayTraceProject.Spatial
             SceneObject intersectedSceneObject = null;
 
             Vector3 v1, v2, rayDirPosition;
-            while (!intersectionFound && cubeoidIndex < intersectedCubeoids.Count)
+            while (!intersectionFound && cubeoidIndex < cubeoids.Count)
             {
-                List<ISpatialBody> objects = intersectedCubeoids[cubeoidIndex++].containingObjects;
+                List<ISpatialBody> objects = cubeoids[cubeoidIndex++].Value.containingObjects;
                 for (int i = 0; i < objects.Count; i++)
                 {
                     if (ignoreObject == null || ignoreObject != objects[i])
@@ -433,7 +481,7 @@ namespace RayTraceProject.Spatial
             return intersectionFound;
         }
 
-        private void GetRayCubeNodeIntersections(ref Ray ray, CubeNode current, SortedDictionary<float, CubeNode> cubeoids)
+        private void GetRayCubeNodeIntersections(ref Ray ray, CubeNode current, List<KeyValuePair<float, CubeNode>> cuboids) //SortedDictionary<float, CubeNode>
         {
             float? result;
             current.bounds.Intersects(ref ray, out result);
@@ -443,12 +491,48 @@ namespace RayTraceProject.Spatial
                 {
                     for (int i = 0; i < 8; i++)
                     {
-                        GetRayCubeNodeIntersections(ref ray, current.children[i], cubeoids);
+                        GetRayCubeNodeIntersections(ref ray, current.children[i], cuboids);
                     }
                 }
                 else
                 {
-                    cubeoids.Add(result.Value, current); // result.Value
+                    // Insert cuboid in result list, using binary search to keep list sorted.
+                    if (cuboids.Count > 0)
+                    {
+                        int maxIndex = cuboids.Count;
+                        int minIndex = 0;
+                        int midIndex = 0;
+                        bool inserted = false;
+
+                        while (maxIndex >= minIndex && !inserted)
+                        {
+                            midIndex = (minIndex + maxIndex) / 2;
+
+                            if (cuboids[midIndex].Key < result.Value)
+                            {
+                                minIndex = midIndex + 1;
+                            }
+                            else if (cuboids[midIndex].Key > result.Value)
+                            {
+                                maxIndex = midIndex - 1;
+                            }
+                            else
+                            {
+                                cuboids.Insert(midIndex, new KeyValuePair<float, CubeNode>(result.Value, current));
+                                inserted = true;
+                            }
+                        }
+                        if (!inserted)
+                        {
+                            cuboids.Insert(midIndex, new KeyValuePair<float, CubeNode>(result.Value, current));
+                        }
+                    }
+                    else
+                    {
+                        cuboids.Add(new KeyValuePair<float, CubeNode>(result.Value, current));
+                    }
+
+                    //cuboids.Add(new KeyValuePair<float, CubeNode>(result.Value, current)); // result.Value
                 }
             }
         }

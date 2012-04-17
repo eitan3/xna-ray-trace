@@ -13,6 +13,7 @@ namespace RayTraceProject
     {
         List<Mesh> meshes;
         BoundingBox boundingBox;
+        BoundingBox worldBoundingBox;
         Vector3 position;
         Vector3 rotation;
         Vector3 scale = Vector3.One;
@@ -31,6 +32,16 @@ namespace RayTraceProject
 #endif
 
         public List<Mesh> Meshes { get { return this.meshes; } }
+
+        public BoundingBox WorldBoundingBox
+        {
+            get
+            {
+                if (this.worldIsDirty)
+                    this.BuildWorld();
+                return this.worldBoundingBox;
+            }
+        }
 
         public BoundingBox BoundingBox
         {
@@ -179,8 +190,9 @@ namespace RayTraceProject
             Matrix translationMatrix = Matrix.CreateTranslation(this.position);
 
             this.world = scaleMatrix * rotationMatrix * translationMatrix;
-            //Vector3.Transform(ref this.boundingBox.Max, ref this.world, out this.boundingBox.Max);
-            //Vector3.Transform(ref this.boundingBox.Min, ref this.world, out this.boundingBox.Min);
+
+            Vector3.Transform(ref this.boundingBox.Max, ref this.world, out this.worldBoundingBox.Max);
+            Vector3.Transform(ref this.boundingBox.Min, ref this.world, out this.worldBoundingBox.Min);
 
             Matrix.Invert(ref this.world, out this.inverseWorld);
         }
