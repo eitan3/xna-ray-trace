@@ -22,7 +22,7 @@ namespace RayTraceProject
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         RasterizerState solidRasterState, wireRasterState;
-        bool useWireframe = true;
+        bool useWireframe = false;
         SpriteFont onScreenFont;
         KeyboardState lastState;
         MouseState lastMouse;
@@ -79,9 +79,9 @@ namespace RayTraceProject
             this.onScreenFont = Content.Load<SpriteFont>("Fonts\\OnScreenFont");
 
             Model planeModel = Content.Load<Model>("Ground");
-            Model sphereModel = Content.Load<Model>("prism2");
+            Model sphereModel = Content.Load<Model>("sphere");
 
-            plane = new SceneObject(GraphicsDevice, planeModel, new Vector3(0, 0, 4), new Vector3(MathHelper.PiOver2, 0, 0));
+            plane = new SceneObject(GraphicsDevice, planeModel, new Vector3(0, 0, 0), new Vector3(0, 0, 0));
             plane.Name = "Ground";
 
             // Uncomment this for video functionality
@@ -93,21 +93,27 @@ namespace RayTraceProject
             //////}
 
             this.scene = new Spatial.OctreeSpatialManager();
-            this.scene.Bodies.Add(plane);
+            //this.scene.Bodies.Add(plane);
 
-            prism = new SceneObject(GraphicsDevice, sphereModel, new Vector3(0, 0, 8), new Vector3(0, 0, 0));
-            prism.Scale = Vector3.One;
-            prism.Name = "Sphere";
-            scene.Bodies.Add(prism);
+            for (int x = 0; x < 2; x++)
+            {
+                for (int y = 0; y < 2; y++)
+                {
+                    prism = new SceneObject(GraphicsDevice, sphereModel, new Vector3(-7.5f + (5 * x), 2, -7.5f + (5 * y)), new Vector3(0, 0, 0));
+                    prism.Scale = Vector3.One;
+                    prism.Name = string.Format("Sphere ({0},{1})", x, y);
+                    scene.Bodies.Add(prism);
+                }
+            }
 
             this.scene.Build();
 
-            this.camera = new Camera(new Vector3(0, 0, 16), prism.Position, Vector3.Up, 1.57f, GraphicsDevice.Viewport.AspectRatio, 1.0f, 1000.0f);
+            this.camera = new Camera(new Vector3(0, 16, 32), Vector3.Zero, Vector3.Up, MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 1.0f, 1000.0f);
 
             // staticProj and staticView is used for debugging purposes when working on refractions
             staticProj = camera.Projection;
             staticView = camera.View;
-            camera.Position = new Vector3(0, 3.0001f, 8.000008f);
+            //camera.Position = new Vector3(0, 3.0001f, 8.000008f);
             rayTraceTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None, 0, RenderTargetUsage.PreserveContents);
 
             tracer = new RayTracer();
@@ -117,7 +123,7 @@ namespace RayTraceProject
             tracer.CurrentScene = this.scene;
             tracer.CurrentTarget = rayTraceTarget;
             tracer.GraphicsDevice = GraphicsDevice;
-            tracer.MaxReflections = 4;
+            tracer.MaxReflections = 8;
             tracer.UseMultisampling = false;
             tracer.MultisampleQuality = 1;
             tracer.RenderCompleted += new EventHandler<System.ComponentModel.AsyncCompletedEventArgs>(tracer_RenderCompleted);
@@ -145,8 +151,8 @@ namespace RayTraceProject
         float rot = 0;
         void tracer_RenderCompleted(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
         {
-            //////////rayTraceWatch.Stop();
-            //////////Debug.WriteLine(rayTraceWatch.Elapsed.ToString());
+            rayTraceWatch.Stop();
+            Debug.WriteLine(rayTraceWatch.Elapsed.ToString());
             //////////string filePath = System.IO.Path.Combine(this.folder, string.Format("image{0}.png", frame++));
             //////////using(System.IO.FileStream fs = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
             //////////{
@@ -281,7 +287,7 @@ namespace RayTraceProject
                 prism.Rotation -= new Vector3(0, 0.02f, 0);
             }
             MouseState mouseState = Mouse.GetState();
-            ticker += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+            //ticker += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
             if (ticker >= 80)
             {
                 ticker -= 80;
@@ -303,20 +309,20 @@ namespace RayTraceProject
             }
             if (mouseState.LeftButton == ButtonState.Released && lastMouse.LeftButton == ButtonState.Pressed)
             {
-                //tracer.points.Clear();
-                //Vector3 screenSpaceCoord;
-                //Ray ray;
-                //screenSpaceCoord.X = GraphicsDevice.Viewport.Width / 2.0f;//mouseState.X;
-                //screenSpaceCoord.Y = (GraphicsDevice.Viewport.Height / 2.0f) - 5;//mouseState.Y;
-                //screenSpaceCoord.Z = 0;
-                //ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+                tracer.points.Clear();
+                Vector3 screenSpaceCoord;
+                Ray ray;
+                screenSpaceCoord.X = GraphicsDevice.Viewport.Width / 2.0f;//mouseState.X;
+                screenSpaceCoord.Y = (GraphicsDevice.Viewport.Height / 2.0f) - 5;//mouseState.Y;
+                screenSpaceCoord.Z = 0;
+                ray.Position = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
 
-                //screenSpaceCoord.Z = 1;
-                //Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
-                //Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
-                //Vector3.Normalize(ref ray.Direction, out ray.Direction);
-                //Color color;
-                //tracer.CastRay(ref ray, out color, 1, null, null, 1.0f);
+                screenSpaceCoord.Z = 1;
+                Vector3 vector2 = GraphicsDevice.Viewport.Unproject(screenSpaceCoord, camera.Projection, camera.View, Matrix.Identity);
+                Vector3.Subtract(ref vector2, ref ray.Position, out ray.Direction);
+                Vector3.Normalize(ref ray.Direction, out ray.Direction);
+                Color color;
+                tracer.CastRay(ref ray, out color, 1, null, null, 1.0f);
                 ////tracer.CastRay(ray, out color, 1, null);
 
             }

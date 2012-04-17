@@ -18,6 +18,10 @@ namespace RayTraceProject.Spatial
             get;
             set;
         }
+        BoundingBox WorldBoundingBox
+        {
+            get;
+        }
 
         //bool GetIntersectingFaceNormal(Ray ray, out Vector3 normal, out float? distance);
 
