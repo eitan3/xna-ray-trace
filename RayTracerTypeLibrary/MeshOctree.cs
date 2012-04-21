@@ -56,7 +56,7 @@ namespace RayTracerTypeLibrary
         public void Build()
         {
             this.depth = 0;
-            BoundingBox box = new BoundingBox(Vector3.Zero, Vector3.Zero);
+            BoundingBox box = new BoundingBox(new Vector3(float.MaxValue), new Vector3(float.MinValue));
 
 
             this.root = new CubeNode();
