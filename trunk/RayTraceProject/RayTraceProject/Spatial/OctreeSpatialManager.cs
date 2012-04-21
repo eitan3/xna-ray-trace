@@ -47,7 +47,7 @@ namespace RayTraceProject.Spatial
 #endif
         }
         private CubeNode root;
-        private int itemTreshold = 100;
+        private int itemTreshold = 20;
         private List<ISpatialBody> objects;
         private uint depth;
 
@@ -84,7 +84,14 @@ namespace RayTraceProject.Spatial
                     Vector3.Min(transformedBox.Min, transformedBox.Max),
                     Vector3.Max(transformedBox.Min, transformedBox.Max));
 
-                BoundingBox.CreateMerged(ref box, ref objectBox, out box);
+                if (i == 0)
+                {
+                    box = objectBox;
+                }
+                else
+                {
+                    BoundingBox.CreateMerged(ref box, ref objectBox, out box);
+                }
             }
 
             root.bounds = box;
@@ -317,13 +324,10 @@ namespace RayTraceProject.Spatial
             int cubeoidIndex = 0;
 
             float minDistance = float.MaxValue;
-            float intersectionU = 0;
-            float intersectionV = 0;
-            Triangle intersectedTriangle = null;
-            Vector3 intersectedObjectSpacePosition = Vector3.Zero;
             bool intersectionFound = false;
             Mesh intersectedMesh = null;
             SceneObject intersectedSceneObject = null;
+            RayTracerTypeLibrary.MeshOctree.TriangleIntersectionResult? intersectedTriangleResult = null;
             RayTracerTypeLibrary.MeshOctree.TriangleIntersectionResult? triangleResult;
 
             Vector3 v1, v2, rayDirPosition;
@@ -367,11 +371,9 @@ namespace RayTraceProject.Spatial
                                         triangleResult.Value.d < minDistance)
                                     {
                                         minDistance = triangleResult.Value.d;
-                                        intersectedTriangle = triangleResult.Value.triangle;
-                                        intersectedObjectSpacePosition = triangleResult.Value.objectSpacePosition;
+                                        intersectedTriangleResult = triangleResult;
                                         intersectedMesh = sceneObject.Meshes[meshIndex];
                                         intersectedSceneObject = sceneObject;
-                                        // Signal that intersection was found. Remaining objects in this cubeoid will be examined, but no more cubeoids.
                                         intersectionFound = true;
                                     }
                                     
@@ -435,18 +437,16 @@ namespace RayTraceProject.Spatial
 
             if (intersectionFound)
             {
-                //Vector3 p1 = intersectedTriangle.v2 - intersectedTriangle.v1;
-                //Vector3 p2 = intersectedTriangle.v3 - intersectedTriangle.v1;
-                //Vector3 interpolatedPosition = intersectedTriangle.v1 + (p1 * intersectionU) + (p2 * intersectionV);
                 Vector3 interpolatedPosition;
                 Matrix world = intersectedSceneObject.World;
-                Vector3.Transform(ref intersectedObjectSpacePosition, ref world, out interpolatedPosition);
+                Vector3 objectSpacePosition = intersectedTriangleResult.Value.objectSpacePosition;
+                Vector3.Transform(ref objectSpacePosition, ref world, out interpolatedPosition);
 
                 result = new IntersectionResult(
                     intersectedMesh,
-                    intersectedTriangle,
-                    intersectionU,
-                    intersectionV,
+                    intersectedTriangleResult.Value.triangle,
+                    intersectedTriangleResult.Value.u,
+                    intersectedTriangleResult.Value.v,
                     minDistance,
                     interpolatedPosition);
             }
